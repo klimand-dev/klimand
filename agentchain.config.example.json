@@ -1,0 +1,16 @@
+{
+  "stateDir": ".agentchain",
+  "maxCycles": 8,
+  "stepTimeoutMs": 1800000,
+  "maxRetries": 1,
+  "providers": {
+    "codex": {
+      "command": "codex",
+      "args": ["exec", "--json", "--ask-for-approval", "never"]
+    },
+    "claude": {
+      "command": "claude",
+      "args": ["-p", "--output-format", "stream-json", "--permission-mode", "bypassPermissions"]
+    }
+  }
+}
