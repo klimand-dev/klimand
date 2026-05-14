@@ -31,5 +31,5 @@ export async function rotateSandbox(threadId?: string): Promise<string> {
 }
 
 export function getSandboxRoot(): string {
-  return path.join(os.tmpdir(), "agentchain-sandboxes");
+  return path.join(os.tmpdir(), "klimand-sandboxes");
 }

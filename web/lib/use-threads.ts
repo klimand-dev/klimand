@@ -7,7 +7,8 @@ export interface UseThreads {
   threads: Thread[];
   loading: boolean;
   refresh: () => Promise<void>;
-  create: (input?: { title?: string; kind?: ThreadKind; scheduleId?: string }) => Promise<Thread | null>;
+  create: (input?: { title?: string; kind?: ThreadKind; scheduleId?: string; ingestUrl?: string; projectPath?: string }) => Promise<Thread | null>;
+  createIngest: (ingestUrl: string) => Promise<{ thread: Thread | null; error?: string }>;
   remove: (id: string) => Promise<void>;
   rename: (id: string, title: string) => Promise<void>;
 }
@@ -52,6 +53,31 @@ export function useThreads(): UseThreads {
     [refresh]
   );
 
+  const createIngest: UseThreads["createIngest"] = useCallback(
+    async (ingestUrl) => {
+      try {
+        const res = await fetch("/api/threads", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ingestUrl })
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          thread?: Thread;
+          error?: string;
+          message?: string;
+        };
+        if (!res.ok) {
+          return { thread: null, error: data.message || data.error || `error ${res.status}` };
+        }
+        await refresh();
+        return { thread: data.thread ?? null };
+      } catch (e) {
+        return { thread: null, error: e instanceof Error ? e.message : String(e) };
+      }
+    },
+    [refresh]
+  );
+
   const remove: UseThreads["remove"] = useCallback(
     async (id) => {
       try {
@@ -60,7 +86,7 @@ export function useThreads(): UseThreads {
         /* swallow */
       }
       try {
-        localStorage.removeItem(`agentchain:thread:${id}:messages`);
+        localStorage.removeItem(`klimand:thread:${id}:messages`);
       } catch {
         /* swallow */
       }
@@ -85,5 +111,5 @@ export function useThreads(): UseThreads {
     [refresh]
   );
 
-  return { threads, loading, refresh, create, remove, rename };
+  return { threads, loading, refresh, create, createIngest, remove, rename };
 }

@@ -71,7 +71,7 @@ export async function startServer(opts: ServeOptions): Promise<{ close: () => Pr
   );
 
   // 2) Cross-process: watch audit.jsonl and poll DB so state from a separate
-  //    `agentchain run` process is visible to the dashboard.
+  //    `klimand run` process is visible to the dashboard.
   const auditFile = opts.audit.file;
   let auditOffset = 0;
   try {

@@ -19,6 +19,19 @@ interface AgentPrefs {
     sandboxMode?: "workspace-write" | "read-only";
     extraArgs?: string;
   };
+  llm: {
+    openai: { apiKey?: string };
+    anthropic: { apiKey?: string };
+  };
+  integrations: {
+    github: { pat?: string };
+    linear: { apiKey?: string };
+  };
+  license?: {
+    key?: string;
+    verifiedAt?: string;
+    status?: "active" | "trial" | "expired" | "unknown";
+  };
 }
 
 interface CliStatus {
@@ -34,9 +47,16 @@ interface DoctorReport {
   checkedAt: string;
 }
 
-type Tab = "hints" | "clis" | "schedules" | "doctor";
+type Tab = "hints" | "clis" | "byok" | "schedules" | "doctor";
 
-const EMPTY_PREFS: AgentPrefs = { routingHints: "", approval: "auto", claude: {}, codex: {} };
+const EMPTY_PREFS: AgentPrefs = {
+  routingHints: "",
+  approval: "auto",
+  claude: {},
+  codex: {},
+  llm: { openai: {}, anthropic: {} },
+  integrations: { github: {}, linear: {} }
+};
 
 export function AgentProfilePanel({ className }: { className?: string }): React.ReactElement {
   const [tab, setTab] = useState<Tab>("hints");
@@ -122,6 +142,7 @@ export function AgentProfilePanel({ className }: { className?: string }): React.
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {tab === "hints" && <HintsTab prefs={prefs} onChange={queueSave} />}
         {tab === "clis" && <CliTab prefs={prefs} onChange={queueSave} />}
+        {tab === "byok" && <ByokTab prefs={prefs} onChange={queueSave} />}
         {tab === "schedules" && <SchedulesTab />}
         {tab === "doctor" && <DoctorTab doctor={doctor} busy={doctorBusy} onRefresh={refreshDoctor} />}
       </div>
@@ -150,6 +171,7 @@ function PanelHeader({ saveState }: { saveState: "idle" | "saving" | "saved" }):
 const TABS: { id: Tab; label: string }[] = [
   { id: "hints", label: "Hints" },
   { id: "clis", label: "CLIs" },
+  { id: "byok", label: "BYOK" },
   { id: "schedules", label: "Schedules" },
   { id: "doctor", label: "Doctor" }
 ];
@@ -517,5 +539,134 @@ function inputCls(extra = ""): string {
   return cn(
     "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent",
     extra
+  );
+}
+
+function ByokTab({
+  prefs,
+  onChange
+}: {
+  prefs: AgentPrefs;
+  onChange: (next: AgentPrefs) => void;
+}): React.ReactElement {
+  const isPro = prefs.license?.status === "active" || prefs.license?.status === "trial";
+  const setOpenai = (apiKey: string) =>
+    onChange({ ...prefs, llm: { ...prefs.llm, openai: { apiKey: apiKey || undefined } } });
+  const setAnthropic = (apiKey: string) =>
+    onChange({ ...prefs, llm: { ...prefs.llm, anthropic: { apiKey: apiKey || undefined } } });
+  const setGithub = (pat: string) =>
+    onChange({ ...prefs, integrations: { ...prefs.integrations, github: { pat: pat || undefined } } });
+  const setLinear = (apiKey: string) =>
+    onChange({ ...prefs, integrations: { ...prefs.integrations, linear: { apiKey: apiKey || undefined } } });
+
+  return (
+    <div className="flex flex-col gap-6">
+      <section className="flex flex-col gap-3 rounded-md border border-border bg-muted/20 p-3">
+        <div className="flex items-center justify-between">
+          <SectionTitle>License</SectionTitle>
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide",
+              isPro ? "border-emerald-400/50 text-emerald-400" : "border-border text-muted-foreground"
+            )}
+          >
+            {isPro ? "Pro" : "Free"}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {isPro
+            ? "Pro is active. Hosted scheduling, GitHub-backed sync, push notifications, and hosted LLM gateway are available."
+            : "Free plan. Paste a license key on the /license page to unlock Pro features."}
+        </p>
+        <a
+          href="/license"
+          className="font-mono text-[11px] underline text-foreground hover:text-accent"
+        >
+          Manage license →
+        </a>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <SectionTitle>LLM keys</SectionTitle>
+        <p className="text-xs text-muted-foreground">
+          The orchestrator router needs one OpenAI key (gpt-5 family). Anthropic is optional — only used if you switch the
+          router model. Keys are stored locally in <code className="font-mono text-[10px]">~/.config/klimand/prefs.json</code>{" "}
+          (same trust model as your Claude Code / Codex CLI configs).
+        </p>
+        <Field label="OpenAI API key">
+          <SecretInput
+            value={prefs.llm.openai.apiKey ?? ""}
+            placeholder="sk-..."
+            onChange={setOpenai}
+          />
+        </Field>
+        <Field label="Anthropic API key (optional)">
+          <SecretInput
+            value={prefs.llm.anthropic.apiKey ?? ""}
+            placeholder="sk-ant-..."
+            onChange={setAnthropic}
+          />
+        </Field>
+        {isPro ? (
+          <p className="text-[11px] italic text-muted-foreground">
+            Tip (Pro): we can route the orchestrator through Klimand&apos;s hosted LLM gateway — no key paste needed. Enable
+            it from the License page once you&apos;ve activated.
+          </p>
+        ) : null}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <SectionTitle>Integrations</SectionTitle>
+        <p className="text-xs text-muted-foreground">
+          PATs / API keys used when you paste a GitHub PR, issue, or Linear ticket URL into the chat composer.
+        </p>
+        <Field label="GitHub personal access token">
+          <SecretInput
+            value={prefs.integrations.github.pat ?? ""}
+            placeholder="github_pat_..."
+            onChange={setGithub}
+          />
+        </Field>
+        <Field label="Linear API key">
+          <SecretInput
+            value={prefs.integrations.linear.apiKey ?? ""}
+            placeholder="lin_api_..."
+            onChange={setLinear}
+          />
+        </Field>
+      </section>
+    </div>
+  );
+}
+
+function SecretInput({
+  value,
+  placeholder,
+  onChange
+}: {
+  value: string;
+  placeholder: string;
+  onChange: (v: string) => void;
+}): React.ReactElement {
+  const [reveal, setReveal] = useState(false);
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type={reveal ? "text" : "password"}
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        autoComplete="off"
+        spellCheck={false}
+        className={inputCls("font-mono")}
+      />
+      <button
+        type="button"
+        onClick={() => setReveal((r) => !r)}
+        className="shrink-0 rounded border border-border bg-card px-2 py-1.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground hover:text-foreground"
+      >
+        {reveal ? "hide" : "show"}
+      </button>
+    </div>
   );
 }

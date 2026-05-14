@@ -87,9 +87,9 @@ function sensitiveHomeDirs(): string[] {
   return [path.join(home, ".ssh"), path.join(home, ".aws")];
 }
 
-function agentchainStateDir(): string {
-  if (process.env.AGENTCHAIN_STATE_DIR) return path.resolve(process.env.AGENTCHAIN_STATE_DIR);
-  return path.resolve(process.cwd(), "..", ".agentchain");
+function klimandStateDir(): string {
+  if (process.env.KLIMAND_STATE_DIR) return path.resolve(process.env.KLIMAND_STATE_DIR);
+  return path.resolve(process.cwd(), "..", ".klimand");
 }
 
 function isUnder(p: string, parent: string): boolean {
@@ -97,20 +97,21 @@ function isUnder(p: string, parent: string): boolean {
   return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel));
 }
 
-function isBlockedPath(abs: string): boolean {
+export function isBlockedPath(abs: string): boolean {
   if (process.platform === "win32") {
     if (WIN_BLOCKLIST.some((re) => re.test(abs))) return true;
   } else {
     if (POSIX_BLOCKLIST.some((re) => re.test(abs))) return true;
   }
   if (sensitiveHomeDirs().some((s) => isUnder(abs, s))) return true;
-  if (isUnder(abs, agentchainStateDir())) return true;
+  if (isUnder(abs, klimandStateDir())) return true;
   return false;
 }
 
-async function hasProjectMarker(abs: string): Promise<boolean> {
-  const markers = ["CLAUDE.md", "AGENTS.md", ".claude", ".codex", ".mcp.json", "package.json", ".git"];
-  for (const m of markers) {
+export const PROJECT_MARKERS = ["CLAUDE.md", "AGENTS.md", ".claude", ".codex", ".mcp.json", "package.json", ".git"] as const;
+
+export async function hasProjectMarker(abs: string): Promise<boolean> {
+  for (const m of PROJECT_MARKERS) {
     try {
       await stat(path.join(abs, m));
       return true;
@@ -119,6 +120,19 @@ async function hasProjectMarker(abs: string): Promise<boolean> {
     }
   }
   return false;
+}
+
+export async function detectProjectMarkers(abs: string): Promise<string[]> {
+  const out: string[] = [];
+  for (const m of PROJECT_MARKERS) {
+    try {
+      await stat(path.join(abs, m));
+      out.push(m);
+    } catch {
+      /* continue */
+    }
+  }
+  return out;
 }
 
 export async function validateProjectPath(input: string): Promise<string> {
@@ -261,17 +275,30 @@ async function scanSkillsDir(dir: string, warnings: string[]): Promise<Array<{ n
     const child = path.join(dir, entry);
     try {
       const st = await stat(child);
-      if (!st.isDirectory()) continue;
-      const skillMd = path.join(child, "SKILL.md");
-      let description = "";
-      try {
-        const text = await readFile(skillMd, "utf8");
-        const fm = parseFrontmatter(text);
-        description = clipDescription(fm.data["description"] || firstNonEmptyLine(fm.body), 200);
-      } catch {
-        /* skill dir without SKILL.md — keep description empty */
+      if (st.isDirectory()) {
+        // Directory format: <name>/SKILL.md
+        const skillMd = path.join(child, "SKILL.md");
+        let description = "";
+        try {
+          const text = await readFile(skillMd, "utf8");
+          const fm = parseFrontmatter(text);
+          description = clipDescription(fm.data["description"] || firstNonEmptyLine(fm.body), 200);
+        } catch {
+          /* directory without SKILL.md — keep description empty */
+        }
+        out.push({ name: entry, description });
+      } else if (st.isFile() && entry.endsWith(".md")) {
+        // Flat-file format: <name>.md (Claude Code's modern skill layout)
+        try {
+          const text = await readFile(child, "utf8");
+          const fm = parseFrontmatter(text);
+          const name = fm.data["name"]?.trim() || entry.replace(/\.md$/, "");
+          const description = clipDescription(fm.data["description"] || firstNonEmptyLine(fm.body), 200);
+          out.push({ name, description });
+        } catch {
+          /* skip unreadable */
+        }
       }
-      out.push({ name: entry, description });
     } catch {
       /* skip */
     }
@@ -457,7 +484,9 @@ async function fingerprintProject(root: string): Promise<string> {
       /* missing */
     }
   }
-  // Skills: shallow, then SKILL.md
+  // Skills: shallow scan. Two formats coexist:
+  //   - <name>/SKILL.md (directory)
+  //   - <name>.md       (flat file)
   const skillsDir = path.join(root, ".claude", "skills");
   try {
     const skills = await readdir(skillsDir);
@@ -466,8 +495,16 @@ async function fingerprintProject(root: string): Promise<string> {
       if (s) entries.push({ rel: `.claude/skills/[capped:${skills.length}]`, ...s });
     } else {
       for (const sk of skills) {
-        const s = await statIfExists(path.join(skillsDir, sk, "SKILL.md"));
-        if (s) entries.push({ rel: `.claude/skills/${sk}/SKILL.md`, ...s });
+        const child = path.join(skillsDir, sk);
+        const childStat = await statIfExists(child);
+        if (!childStat) continue;
+        const isMdFile = sk.endsWith(".md");
+        if (isMdFile) {
+          entries.push({ rel: `.claude/skills/${sk}`, ...childStat });
+        } else {
+          const inner = await statIfExists(path.join(child, "SKILL.md"));
+          if (inner) entries.push({ rel: `.claude/skills/${sk}/SKILL.md`, ...inner });
+        }
       }
     }
   } catch {
@@ -669,10 +706,10 @@ interface CacheEntry {
   digest: string;
 }
 
-const G = globalThis as unknown as { __agentchainProfileCache?: Map<string, CacheEntry> };
+const G = globalThis as unknown as { __klimandProfileCache?: Map<string, CacheEntry> };
 function cacheMap(): Map<string, CacheEntry> {
-  if (!G.__agentchainProfileCache) G.__agentchainProfileCache = new Map();
-  return G.__agentchainProfileCache;
+  if (!G.__klimandProfileCache) G.__klimandProfileCache = new Map();
+  return G.__klimandProfileCache;
 }
 
 const FRESH_MS = 5_000;

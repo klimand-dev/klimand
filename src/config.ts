@@ -1,10 +1,10 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
-import { AgentChainConfig } from "./types.js";
+import { KlimandConfig } from "./types.js";
 import { readJson } from "./util.js";
 
-const defaults: AgentChainConfig = {
-  stateDir: ".agentchain",
+const defaults: KlimandConfig = {
+  stateDir: ".klimand",
   maxCycles: 8,
   stepTimeoutMs: 30 * 60 * 1000,
   maxRetries: 1,
@@ -20,11 +20,11 @@ const defaults: AgentChainConfig = {
   }
 };
 
-export async function loadConfig(cwd = process.cwd()): Promise<AgentChainConfig> {
-  const file = path.join(cwd, "agentchain.config.json");
+export async function loadConfig(cwd = process.cwd()): Promise<KlimandConfig> {
+  const file = path.join(cwd, "klimand.config.json");
   try {
     await access(file);
-    const local = await readJson<Partial<AgentChainConfig>>(file);
+    const local = await readJson<Partial<KlimandConfig>>(file);
     return {
       ...defaults,
       ...local,

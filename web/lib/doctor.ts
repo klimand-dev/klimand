@@ -22,7 +22,7 @@ interface CacheSlot {
 }
 
 const CACHE_TTL_MS = 5000;
-const GLOBAL_KEY = "__agentchain_doctor__";
+const GLOBAL_KEY = "__klimand_doctor__";
 const slot = globalThis as unknown as { [k: string]: CacheSlot | undefined };
 
 async function exists(p: string): Promise<boolean> {

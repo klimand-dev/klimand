@@ -2,6 +2,8 @@ node_modules/
 dist/
 runs/
 .agentchain/
+.klimand/
+.claude/settings.local.json
 *.log
 .next/
 *.tsbuildinfo

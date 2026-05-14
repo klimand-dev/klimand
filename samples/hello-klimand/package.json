@@ -1,0 +1,11 @@
+{
+  "name": "hello-klimand",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Sample project for Klimand demos.",
+  "scripts": {
+    "lint": "echo lint ok",
+    "typecheck": "echo typecheck ok",
+    "test": "echo tests ok"
+  }
+}

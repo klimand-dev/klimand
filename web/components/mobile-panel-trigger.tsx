@@ -6,24 +6,33 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { AgentProfilePanel } from "@/components/agent-profile-panel";
 import { ThreadList } from "@/components/thread-list";
 import type { Thread } from "@/lib/threads";
+import type { ApprovedRef } from "@/lib/projects";
 import { cn } from "@/lib/utils";
 
 interface MobilePanelTriggerProps {
   threads: Thread[];
+  approved?: ApprovedRef[];
   currentId: string | null;
+  currentProjectPath?: string | null;
   onSelect: (id: string) => void;
   onCreate: () => void;
+  onCreateFromUrl?: (url: string) => Promise<{ ok: boolean; error?: string }>;
   onDelete: (id: string) => void;
   onRename: (id: string, title: string) => void;
+  onSelectProject?: (path: string) => void;
 }
 
 export function MobilePanelTrigger({
   threads,
+  approved,
   currentId,
+  currentProjectPath,
   onSelect,
   onCreate,
+  onCreateFromUrl,
   onDelete,
-  onRename
+  onRename,
+  onSelectProject
 }: MobilePanelTriggerProps): React.ReactElement {
   const [open, setOpen] = useState(false);
   return (
@@ -57,7 +66,9 @@ export function MobilePanelTrigger({
           <div className="border-b border-border">
             <ThreadList
               threads={threads}
+              approved={approved}
               currentId={currentId}
+              currentProjectPath={currentProjectPath}
               onSelect={(id) => {
                 onSelect(id);
                 setOpen(false);
@@ -66,8 +77,17 @@ export function MobilePanelTrigger({
                 onCreate();
                 setOpen(false);
               }}
+              onCreateFromUrl={onCreateFromUrl ? async (url) => {
+                const r = await onCreateFromUrl(url);
+                if (r.ok) setOpen(false);
+                return r;
+              } : undefined}
               onDelete={onDelete}
               onRename={onRename}
+              onSelectProject={(p) => {
+                onSelectProject?.(p);
+                setOpen(false);
+              }}
             />
           </div>
           <AgentProfilePanel />

@@ -11,8 +11,8 @@ let stateDir: string;
 let workspace: string;
 
 beforeEach(async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "agentchain-ink-"));
-  stateDir = path.join(root, ".agentchain");
+  const root = await mkdtemp(path.join(os.tmpdir(), "klimand-ink-"));
+  stateDir = path.join(root, ".klimand");
   workspace = path.join(root, "workspace");
 });
 

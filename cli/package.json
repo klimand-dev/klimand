@@ -1,0 +1,31 @@
+{
+  "name": "klimand",
+  "version": "0.4.0",
+  "description": "Local orchestrator for Claude Code + Codex with project awareness. Starts the Klimand web UI in one command.",
+  "license": "Apache-2.0",
+  "bin": {
+    "klimand": "./bin/klimand.mjs"
+  },
+  "files": [
+    "bin/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node ./bin/klimand.mjs"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "codex",
+    "agent",
+    "orchestrator",
+    "cli"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/REPLACE_ME/klimand.git"
+  }
+}

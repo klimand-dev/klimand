@@ -1,6 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { AgentChainConfig, AgentResult, ProviderName, ProviderRun, Step } from "./types.js";
+import { KlimandConfig, AgentResult, ProviderName, ProviderRun, Step } from "./types.js";
 import { ensureDir, writeJson } from "./util.js";
 import { runProcess } from "./process-runner.js";
 
@@ -26,7 +26,7 @@ export interface ProviderRunOptions {
 }
 
 export async function runProvider(
-  config: AgentChainConfig,
+  config: KlimandConfig,
   step: Step,
   workspace: string,
   hooks: ProviderRunOptions = {}
@@ -35,7 +35,7 @@ export async function runProvider(
   return runClaude(config, step, workspace, hooks);
 }
 
-async function runCodex(config: AgentChainConfig, step: Step, workspace: string, hooks: ProviderRunOptions): Promise<ProviderRun> {
+async function runCodex(config: KlimandConfig, step: Step, workspace: string, hooks: ProviderRunOptions): Promise<ProviderRun> {
   const provider = config.providers.codex;
   const out = await prepareArtifacts(step);
   const args = [
@@ -69,7 +69,7 @@ async function runCodex(config: AgentChainConfig, step: Step, workspace: string,
   };
 }
 
-async function runClaude(config: AgentChainConfig, step: Step, workspace: string, hooks: ProviderRunOptions): Promise<ProviderRun> {
+async function runClaude(config: KlimandConfig, step: Step, workspace: string, hooks: ProviderRunOptions): Promise<ProviderRun> {
   const provider = config.providers.claude;
   const out = await prepareArtifacts(step);
   const args = [...provider.args, "--json-schema", out.schema];

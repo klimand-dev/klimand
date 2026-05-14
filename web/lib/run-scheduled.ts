@@ -41,10 +41,13 @@ export async function runScheduledOnce(scheduleId: string): Promise<RunResult> {
   });
 
   try {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error("OPENAI_API_KEY not set");
-    }
     const [prefs, doctor] = await Promise.all([getPrefs(), getDoctor()]);
+    if (!process.env.OPENAI_API_KEY && prefs.llm.openai.apiKey) {
+      process.env.OPENAI_API_KEY = prefs.llm.openai.apiKey;
+    }
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error("OPENAI_API_KEY not set (paste one in Settings → BYOK or set the env var)");
+    }
     let projectPath: string | undefined;
     let projectDigest: string | undefined;
     const thread = await getThread(schedule.threadId).catch(() => null);

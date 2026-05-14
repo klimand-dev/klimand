@@ -57,6 +57,12 @@ export function runAgentAsUIStream(messages: UIMessage[], opts: { threadId?: str
     execute: async ({ writer }) => {
       const textId = `txt_${Date.now()}`;
 
+      const [prefs, doctor] = await Promise.all([getPrefs(), getDoctor()]);
+
+      // BYOK fallback: env first, then user-pasted key from prefs.
+      if (!process.env.OPENAI_API_KEY && prefs.llm.openai.apiKey) {
+        process.env.OPENAI_API_KEY = prefs.llm.openai.apiKey;
+      }
       if (!process.env.OPENAI_API_KEY) {
         writer.write({ type: "start" });
         writer.write({ type: "start-step" });
@@ -64,15 +70,15 @@ export function runAgentAsUIStream(messages: UIMessage[], opts: { threadId?: str
         writer.write({
           type: "text-delta",
           id: textId,
-          delta: "OPENAI_API_KEY is not set. Add it to web/.env.local and restart `npm run dev` to enable the agent."
+          delta:
+            "OpenAI key not configured. Paste one in Settings → BYOK, or set `OPENAI_API_KEY` in your environment, then send again."
         });
         writer.write({ type: "text-end", id: textId });
         writer.write({ type: "finish-step" });
         writer.write({ type: "finish" });
         return;
       }
-
-      const [prefs, doctor] = await Promise.all([getPrefs(), getDoctor()]);
+      let threadContext: string | undefined;
       let projectPath: string | undefined;
       let projectDigest: string | undefined;
       if (opts.threadId) {
@@ -86,9 +92,13 @@ export function runAgentAsUIStream(messages: UIMessage[], opts: { threadId?: str
             /* if the project disappears or becomes invalid, fall back silently to no-digest */
           }
         }
+        if (thread?.context) threadContext = thread.context;
       }
       const agent = makeAgent({ prefs, doctor, projectDigest });
       const input = messagesToAgentInput(messages);
+      if (threadContext) {
+        input.unshift(system(`Thread context (from URL ingest):\n${threadContext}`));
+      }
       if (input.length === 0) {
         writer.write({ type: "start" });
         writer.write({ type: "finish" });

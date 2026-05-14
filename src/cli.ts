@@ -90,7 +90,7 @@ async function main(): Promise<void> {
         const port = Number(readOption(args, "--port") ?? "7878");
         const host = readOption(args, "--host") ?? "127.0.0.1";
         const handle = await startServer({ store, orchestrator, audit, port, host });
-        console.log(`agentchain serve listening on http://${host}:${port}`);
+        console.log(`klimand serve listening on http://${host}:${port}`);
         const shutdown = async () => {
           await handle.close();
           process.exit(0);
@@ -108,7 +108,7 @@ async function main(): Promise<void> {
         const child = spawn(cmd, ["run", "dev"], {
           cwd: webDir,
           stdio: "inherit",
-          env: { ...process.env, AGENTCHAIN_STATE_DIR: config.stateDir }
+          env: { ...process.env, KLIMAND_STATE_DIR: config.stateDir }
         });
         await new Promise<void>((resolve) => {
           child.on("close", () => resolve());
@@ -133,17 +133,17 @@ function readOption(args: string[], name: string): string | undefined {
 function usage(message?: string): never {
   if (message) console.error(message);
   console.error(`Usage:
-  agentchain preflight
-  agentchain start "<goal>" --workspace <dir>
-  agentchain tick --goal <goal-id>
-  agentchain run --goal <goal-id> [--watch]
-  agentchain status [goal-id]
-  agentchain logs [--lines 50]
-  agentchain stop <goal-id>
-  agentchain resume <goal-id>
-  agentchain dashboard
-  agentchain serve [--port 7878] [--host 127.0.0.1]
-  agentchain web`);
+  klimand preflight
+  klimand start "<goal>" --workspace <dir>
+  klimand tick --goal <goal-id>
+  klimand run --goal <goal-id> [--watch]
+  klimand status [goal-id]
+  klimand logs [--lines 50]
+  klimand stop <goal-id>
+  klimand resume <goal-id>
+  klimand dashboard
+  klimand serve [--port 7878] [--host 127.0.0.1]
+  klimand web`);
   process.exit(message ? 1 : 0);
 }
 

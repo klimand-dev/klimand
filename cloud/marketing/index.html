@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Klimand — one chat, two agents, real project awareness</title>
+  <meta name="description" content="Open-source local orchestrator for Claude Code + Codex with project-config awareness, threaded chats, and scheduled runs. Apache-2.0." />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="container">
+      <h1>Klimand</h1>
+      <p class="tag">One chat. Two agents. Real project awareness.</p>
+      <p class="lede">
+        A local orchestrator UI that drives <strong>Claude Code</strong> and <strong>Codex</strong> from a single chat —
+        and actually reads your <code>CLAUDE.md</code>, <code>AGENTS.md</code>, <code>.mcp.json</code>, slash commands,
+        subagents, skills, and hooks before deciding what to do.
+      </p>
+      <p class="cta-row">
+        <code class="cmd">npx klimand</code>
+        <a class="btn" href="https://github.com/klimand-dev/klimand">View on GitHub</a>
+      </p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section>
+      <h2>Free, open source, local-first</h2>
+      <ul>
+        <li>Auto-discovers your projects on first run.</li>
+        <li>Routes between Claude Code and Codex based on the actual project config.</li>
+        <li>Threaded chats, scheduled runs, project view, MCP awareness.</li>
+        <li>Apache-2.0. BYOK for the orchestrator.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Pro — coming later</h2>
+      <p>
+        Klimand is free and open source today. A paid Pro tier is planned for solo devs who want the convenience features off their plate.
+        Watch the repo for launch updates.
+      </p>
+      <ul>
+        <li><strong>Hosted scheduling</strong> — runs even when your laptop is closed.</li>
+        <li><strong>GitHub-backed sync</strong> — your own private repo holds your state, so cross-device works without us hosting your data.</li>
+        <li><strong>Push notifications</strong> — when a run finishes or needs approval.</li>
+        <li><strong>Hosted LLM gateway</strong> — no API key to paste; capped monthly budget.</li>
+      </ul>
+      <p>
+        <a class="btn" href="https://github.com/klimand-dev/klimand">Watch the repo →</a>
+      </p>
+    </section>
+
+    <section>
+      <h2>How it compares</h2>
+      <table>
+        <thead>
+          <tr><th>If you currently use…</th><th>Klimand adds</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>claude CLI alone</td><td>Multi-CLI routing, thread history, project view, scheduling</td></tr>
+          <tr><td>codex CLI alone</td><td>Same — plus Claude Code as a peer when the task calls for it</td></tr>
+          <tr><td>Cursor / Cline / aider</td><td>A CLI-agnostic orchestrator, outside your editor</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer>
+      <p>© 2026 Klimand contributors · Apache-2.0 · <a href="https://github.com/klimand-dev/klimand">GitHub</a></p>
+    </footer>
+  </main>
+</body>
+</html>

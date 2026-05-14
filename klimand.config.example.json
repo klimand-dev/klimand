@@ -1,5 +1,5 @@
 {
-  "stateDir": ".agentchain",
+  "stateDir": ".klimand",
   "maxCycles": 8,
   "stepTimeoutMs": 1800000,
   "maxRetries": 1,

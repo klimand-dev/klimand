@@ -1,0 +1,22 @@
+name = "klimand"
+main = "src/index.ts"
+compatibility_date = "2026-01-15"
+compatibility_flags = ["nodejs_compat"]
+
+# KV: license metadata + push subscriptions + per-license LLM token counters
+[[kv_namespaces]]
+binding = "KLIMAND_KV"
+id = "REPLACE_WITH_KV_ID_AFTER_wrangler_kv_namespace_create"
+
+# Cron: scheduler tick every minute
+[triggers]
+crons = ["* * * * *"]
+
+# Required secrets (set via `wrangler secret put`):
+#   STRIPE_SECRET_KEY            - sk_live_... or sk_test_...
+#   STRIPE_WEBHOOK_SECRET        - whsec_...
+#   STRIPE_PRO_PRICE_ID          - price_...
+#   OPENAI_API_KEY               - our key, used by hosted LLM gateway
+#   VAPID_PUBLIC_KEY             - generated via web-push generate-vapid-keys
+#   VAPID_PRIVATE_KEY            -
+#   VAPID_CONTACT                - mailto:you@example.com

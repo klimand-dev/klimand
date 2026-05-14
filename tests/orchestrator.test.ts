@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, test } from "vitest";
 import { AuditLog } from "../src/audit.js";
 import { Orchestrator } from "../src/orchestrator.js";
 import { StateStore } from "../src/state.js";
-import { AgentChainConfig } from "../src/types.js";
+import { KlimandConfig } from "../src/types.js";
 
 const FAKE_CLI = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures", "fake-cli.cjs");
 
@@ -15,9 +15,9 @@ let workspace: string;
 let stateDir: string;
 
 beforeEach(async () => {
-  root = await mkdtemp(path.join(os.tmpdir(), "agentchain-"));
+  root = await mkdtemp(path.join(os.tmpdir(), "klimand-"));
   workspace = path.join(root, "workspace");
-  stateDir = path.join(root, ".agentchain");
+  stateDir = path.join(root, ".klimand");
 });
 
 function makeConfig(overrides: {
@@ -27,7 +27,7 @@ function makeConfig(overrides: {
   codexResults: unknown[];
   claudeCounter?: string;
   codexCounter?: string;
-}): AgentChainConfig {
+}): KlimandConfig {
   return {
     stateDir,
     maxCycles: overrides.maxCycles ?? 4,

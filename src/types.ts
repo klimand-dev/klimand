@@ -10,7 +10,7 @@ export interface ProviderConfig {
   env?: Record<string, string>;
 }
 
-export interface AgentChainConfig {
+export interface KlimandConfig {
   stateDir: string;
   maxCycles: number;
   stepTimeoutMs: number;

@@ -4,11 +4,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "vitest";
 import { preflight } from "../src/preflight.js";
-import { AgentChainConfig } from "../src/types.js";
+import { KlimandConfig } from "../src/types.js";
 
 const FAKE_CLI = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures", "fake-cli.cjs");
 
-function makeConfig(stateDir: string, providerArgs: { claude?: string[]; codex?: string[] } = {}): AgentChainConfig {
+function makeConfig(stateDir: string, providerArgs: { claude?: string[]; codex?: string[] } = {}): KlimandConfig {
   return {
     stateDir,
     maxCycles: 1,
@@ -30,8 +30,8 @@ function makeConfig(stateDir: string, providerArgs: { claude?: string[]; codex?:
 }
 
 test("preflight reports provider availability", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "agentchain-preflight-"));
-  const config = makeConfig(path.join(root, ".agentchain"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "klimand-preflight-"));
+  const config = makeConfig(path.join(root, ".klimand"));
   const checks = await preflight(config, root);
   expect(checks.find((c) => c.name === "node:sqlite")?.level).toBe("ok");
   expect(checks.find((c) => c.name === "claude cli")?.level).toBe("ok");
@@ -39,8 +39,8 @@ test("preflight reports provider availability", async () => {
 });
 
 test("preflight emits warn when bypass mode is on", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "agentchain-preflight-warn-"));
-  const config = makeConfig(path.join(root, ".agentchain"), {
+  const root = await mkdtemp(path.join(os.tmpdir(), "klimand-preflight-warn-"));
+  const config = makeConfig(path.join(root, ".klimand"), {
     codex: ["--ask-for-approval", "never"],
     claude: ["--permission-mode", "bypassPermissions"]
   });
@@ -52,8 +52,8 @@ test("preflight emits warn when bypass mode is on", async () => {
 });
 
 test("preflight reports ok bypass mode when approval prompts enabled", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "agentchain-preflight-ok-"));
-  const config = makeConfig(path.join(root, ".agentchain"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "klimand-preflight-ok-"));
+  const config = makeConfig(path.join(root, ".klimand"));
   const checks = await preflight(config, root);
   expect(checks.find((c) => c.name === "bypass mode")?.level).toBe("ok");
 });

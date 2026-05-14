@@ -19,6 +19,41 @@ export const AgentPrefsSchema = z.object({
       sandboxMode: z.enum(["workspace-write", "read-only"]).optional(),
       extraArgs: z.string().optional()
     })
+    .default({}),
+  llm: z
+    .object({
+      openai: z
+        .object({
+          apiKey: z.string().optional()
+        })
+        .default({}),
+      anthropic: z
+        .object({
+          apiKey: z.string().optional()
+        })
+        .default({})
+    })
+    .default({ openai: {}, anthropic: {} }),
+  integrations: z
+    .object({
+      github: z
+        .object({
+          pat: z.string().optional()
+        })
+        .default({}),
+      linear: z
+        .object({
+          apiKey: z.string().optional()
+        })
+        .default({})
+    })
+    .default({ github: {}, linear: {} }),
+  license: z
+    .object({
+      key: z.string().optional(),
+      verifiedAt: z.string().optional(),
+      status: z.enum(["active", "trial", "expired", "unknown"]).optional()
+    })
     .default({})
 });
 
@@ -29,10 +64,10 @@ export const DEFAULT_PREFS: AgentPrefs = AgentPrefsSchema.parse({});
 function prefsDir(): string {
   if (process.platform === "win32") {
     const appData = process.env.APPDATA ?? path.join(os.homedir(), "AppData", "Roaming");
-    return path.join(appData, "agentchain");
+    return path.join(appData, "klimand");
   }
   const xdg = process.env.XDG_CONFIG_HOME ?? path.join(os.homedir(), ".config");
-  return path.join(xdg, "agentchain");
+  return path.join(xdg, "klimand");
 }
 
 export function prefsPath(): string {
@@ -55,7 +90,16 @@ export async function setPrefs(partial: Partial<AgentPrefs>): Promise<AgentPrefs
     routingHints: partial.routingHints ?? current.routingHints,
     approval: partial.approval ?? current.approval,
     claude: { ...current.claude, ...(partial.claude ?? {}) },
-    codex: { ...current.codex, ...(partial.codex ?? {}) }
+    codex: { ...current.codex, ...(partial.codex ?? {}) },
+    llm: {
+      openai: { ...current.llm.openai, ...(partial.llm?.openai ?? {}) },
+      anthropic: { ...current.llm.anthropic, ...(partial.llm?.anthropic ?? {}) }
+    },
+    integrations: {
+      github: { ...current.integrations.github, ...(partial.integrations?.github ?? {}) },
+      linear: { ...current.integrations.linear, ...(partial.integrations?.linear ?? {}) }
+    },
+    license: { ...current.license, ...(partial.license ?? {}) }
   };
   const validated = AgentPrefsSchema.parse(merged);
   await mkdir(prefsDir(), { recursive: true });

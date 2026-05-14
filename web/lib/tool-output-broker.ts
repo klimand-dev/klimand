@@ -34,7 +34,7 @@ interface ToolOutputEntry {
 // drop chunks: the tool-execute path and the /api/tool-output route handler
 // must share the same Map instance even if their module records get
 // re-evaluated independently.
-const GLOBAL_KEY = "__agentchain_tool_output_broker__";
+const GLOBAL_KEY = "__klimand_tool_output_broker__";
 const globalSlot = globalThis as unknown as { [k: string]: Map<string, ToolOutputEntry> | undefined };
 const store: Map<string, ToolOutputEntry> = globalSlot[GLOBAL_KEY] ?? new Map<string, ToolOutputEntry>();
 globalSlot[GLOBAL_KEY] = store;

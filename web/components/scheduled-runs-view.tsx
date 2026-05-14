@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { RefreshCwIcon, PlayIcon } from "lucide-react";
+import { RefreshCwIcon, PlayIcon, CloudIcon } from "lucide-react";
 import type { Schedule, ScheduleRun } from "@/lib/schedules";
+import { useLicense } from "@/lib/use-license";
 import { cn } from "@/lib/utils";
 
 export interface ScheduledRunsViewProps {
@@ -13,6 +14,7 @@ export function ScheduledRunsView({ threadId }: ScheduledRunsViewProps): React.R
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const { isPro } = useLicense();
 
   const load = useCallback(async () => {
     try {
@@ -48,6 +50,21 @@ export function ScheduledRunsView({ threadId }: ScheduledRunsViewProps): React.R
       setBusy(false);
     }
   }, [schedule, busy, load]);
+
+  const toggleHosted = useCallback(async () => {
+    if (!schedule || busy || !isPro) return;
+    setBusy(true);
+    try {
+      await fetch(`/api/schedules/${encodeURIComponent(schedule.id)}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ hosted: !schedule.hosted })
+      });
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  }, [schedule, busy, isPro, load]);
 
   if (loading) {
     return (
@@ -86,6 +103,21 @@ export function ScheduledRunsView({ threadId }: ScheduledRunsViewProps): React.R
             </pre>
           </details>
         </div>
+        <button
+          type="button"
+          onClick={toggleHosted}
+          disabled={busy || !isPro}
+          title={isPro ? (schedule.hosted ? "Run on Klimand's cloud (Pro)" : "Run locally") : "Pro required to enable hosted scheduling"}
+          className={cn(
+            "flex items-center gap-1.5 rounded border px-2 py-1 font-mono text-xs disabled:opacity-50",
+            schedule.hosted
+              ? "border-emerald-700/60 bg-emerald-900/20 text-emerald-300"
+              : "border-border bg-card text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <CloudIcon className="h-3 w-3" />
+          {schedule.hosted ? "hosted" : "local"}
+        </button>
         <button
           type="button"
           onClick={runNow}

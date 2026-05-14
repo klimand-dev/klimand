@@ -8,7 +8,7 @@ interface SchedulerState {
   initPromise?: Promise<void>;
 }
 
-const GLOBAL_KEY = "__agentchain_scheduler__";
+const GLOBAL_KEY = "__klimand_scheduler__";
 const slot = globalThis as unknown as { [k: string]: SchedulerState | undefined };
 
 function getState(): SchedulerState {

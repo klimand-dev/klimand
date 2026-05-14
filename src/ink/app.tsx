@@ -63,7 +63,7 @@ function App(props: { adapter: DashboardAdapter; store: StateStore }): React.Rea
   return (
     <Box flexDirection="column">
       <Box>
-        <Text bold color="cyan">AgentChain dashboard</Text>
+        <Text bold color="cyan">Klimand dashboard</Text>
         <Text color="gray">    ↑/↓ select  ·  r resume  ·  s stop  ·  q quit</Text>
       </Box>
       <Box marginTop={1}>

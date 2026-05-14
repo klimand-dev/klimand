@@ -20,6 +20,7 @@ export const ScheduleSchema = z.object({
   prompt: z.string(),
   threadId: z.string(),
   enabled: z.boolean(),
+  hosted: z.boolean().default(false),
   createdAt: z.string(),
   lastRunAt: z.string().optional(),
   runs: z.array(ScheduleRunSchema).default([])
@@ -29,8 +30,8 @@ export type Schedule = z.infer<typeof ScheduleSchema>;
 const MAX_RUNS = 50;
 
 function stateDir(): string {
-  if (process.env.AGENTCHAIN_STATE_DIR) return path.resolve(process.env.AGENTCHAIN_STATE_DIR);
-  return path.resolve(process.cwd(), "..", ".agentchain");
+  if (process.env.KLIMAND_STATE_DIR) return path.resolve(process.env.KLIMAND_STATE_DIR);
+  return path.resolve(process.cwd(), "..", ".klimand");
 }
 function schedulesDir(): string {
   return path.join(stateDir(), "schedules");
@@ -98,6 +99,7 @@ export async function createSchedule(input: {
     prompt: input.prompt,
     threadId: input.threadId,
     enabled: input.enabled ?? true,
+    hosted: false,
     createdAt: new Date().toISOString(),
     runs: []
   };
@@ -107,7 +109,7 @@ export async function createSchedule(input: {
 
 export async function updateSchedule(
   id: string,
-  partial: Partial<Pick<Schedule, "name" | "cron" | "prompt" | "enabled">>
+  partial: Partial<Pick<Schedule, "name" | "cron" | "prompt" | "enabled" | "hosted">>
 ): Promise<Schedule | null> {
   const existing = await getSchedule(id);
   if (!existing) return null;

@@ -8,7 +8,7 @@ export class StateStore {
   private db: DatabaseSync | null = null;
 
   constructor(readonly stateDir: string) {
-    this.dbPath = path.join(stateDir, "agentchain.sqlite");
+    this.dbPath = path.join(stateDir, "klimand.sqlite");
   }
 
   async open(): Promise<void> {

@@ -1,11 +1,11 @@
 ---
 name: goal
-description: Drive the AgentChain 4-phase roadmap (cancel → threads → approve → schedule). One phase per invocation; pair with /loop to chain.
+description: Drive the Klimand 4-phase roadmap (cancel → threads → approve → schedule). One phase per invocation; pair with /loop to chain.
 ---
 
-# AgentChain Roadmap — `/goal`
+# Klimand Roadmap — `/goal`
 
-You are executing one phase of a four-phase enhancement plan for **AgentChain**, the chat-driven orchestrator at `C:\agents\CodexCLIAgent\web` (Next.js App Router, OpenAI Agents SDK on the server, assistant-ui on the client). The orchestrator agent (`gpt-5.4-mini`) delegates every technical task to Claude Code or Codex via the `run_claude_code` / `run_codex` tools.
+You are executing one phase of a four-phase enhancement plan for **Klimand**, the chat-driven orchestrator at `C:\agents\CodexCLIAgent\web` (Next.js App Router, OpenAI Agents SDK on the server, assistant-ui on the client). The orchestrator agent (`gpt-5.4-mini`) delegates every technical task to Claude Code or Codex via the `run_claude_code` / `run_codex` tools.
 
 ## The four phases (dependency order)
 
@@ -81,8 +81,8 @@ You are executing one phase of a four-phase enhancement plan for **AgentChain**,
     messages: unknown[];   // UIMessage[] from assistant-ui/AI SDK
   }
   ```
-  Storage layout: one file per thread under `$AGENTCHAIN_STATE_DIR/threads/<id>.json` plus an index `threads/index.json` for fast listing. Use the atomic-write pattern from `prefs.ts`. Exports: `listThreads()`, `getThread(id)`, `createThread({title?, kind, scheduleId?})`, `updateThread(id, partial)`, `appendMessages(id, msgs)`, `deleteThread(id)`.
-- `web/lib/sandbox.ts` — replace the single `__agentchain_sandbox__` slot with `Map<string, string>` keyed by `threadId`. Add `getSandboxForThread(threadId)` (creates the dir on first access, stores the path in the thread record so it persists). Keep `rotateSandbox(threadId)` for the SandboxBar button. Keep `getCurrentSandbox()` as a thin wrapper that requires a threadId.
+  Storage layout: one file per thread under `$KLIMAND_STATE_DIR/threads/<id>.json` plus an index `threads/index.json` for fast listing. Use the atomic-write pattern from `prefs.ts`. Exports: `listThreads()`, `getThread(id)`, `createThread({title?, kind, scheduleId?})`, `updateThread(id, partial)`, `appendMessages(id, msgs)`, `deleteThread(id)`.
+- `web/lib/sandbox.ts` — replace the single `__klimand_sandbox__` slot with `Map<string, string>` keyed by `threadId`. Add `getSandboxForThread(threadId)` (creates the dir on first access, stores the path in the thread record so it persists). Keep `rotateSandbox(threadId)` for the SandboxBar button. Keep `getCurrentSandbox()` as a thin wrapper that requires a threadId.
 - `web/app/api/chat/route.ts` — accept `threadId` in the request body. If missing, look up or create a default thread (`title: "Default"`, `kind: "chat"`). Pass `threadId` to `runAgentAsUIStream`.
 - `web/lib/bridge.ts` — extend `runAgentAsUIStream` to take `threadId`, load that thread's prior messages, prepend them to the incoming messages, and pass `context: { prefs, threadId }`. After the run completes, persist the new messages back via `appendMessages(threadId, …)`. Update `lastTouched`.
 - `web/lib/cli-tools.ts` — extend `AgentRunContext` with `threadId`. In `runToolAndSummarize`, call `getSandboxForThread(threadId)`. Replace the hardcoded `goal_id: "chat"` in the two audit events with the threadId.
@@ -100,7 +100,7 @@ You are executing one phase of a four-phase enhancement plan for **AgentChain**,
 4. In thread #1, ask Codex to write `a.txt` with "thread 1". In thread #2, ask Codex to write `b.txt` with "thread 2". Both should succeed and write to different sandbox directories. Confirm by checking the SandboxBar path differs between threads.
 5. Switch between threads — message history restores correctly.
 6. Stop the dev server (`Ctrl+C`). Restart with `npm run dev`. All three threads should still be in the list, and each thread's sandbox should still contain its own files.
-7. Delete thread #3 — it should disappear from the list and its on-disk record should be gone (`Test-Path` returns False on `$AGENTCHAIN_STATE_DIR/threads/<id>.json`).
+7. Delete thread #3 — it should disappear from the list and its on-disk record should be gone (`Test-Path` returns False on `$KLIMAND_STATE_DIR/threads/<id>.json`).
 
 ---
 
@@ -153,7 +153,7 @@ You are executing one phase of a four-phase enhancement plan for **AgentChain**,
     createdAt: string;
   }
   ```
-  Storage: `$AGENTCHAIN_STATE_DIR/schedules/index.json` (one file is fine — schedule records are small). Same atomic-write pattern.
+  Storage: `$KLIMAND_STATE_DIR/schedules/index.json` (one file is fine — schedule records are small). Same atomic-write pattern.
 - **New** `web/lib/scheduler-init.ts` — one runner, pinned on `globalThis` (HMR-safe). API: `ensureScheduler()`, `reload()`. On init: list all enabled schedules, register each with `node-cron` (`cron.schedule(spec, tickFn, {scheduled: true})`). On tick: load the schedule by id (in case it was disabled), if still enabled call `runAgentForSchedule(schedule)`. On unhandled error: log to audit, update `lastResult: "error"`.
 - **New** `web/lib/run-scheduled.ts` (or extend `bridge.ts`) — `runAgentForSchedule(schedule)` invokes the agent with `messages: [{role: "user", content: schedule.prompt}]` and `threadId: schedule.threadId`. Reuses the same `run(agent, input, { context: { prefs, threadId }})` path as the chat route; just doesn't stream over HTTP. After completion, persist the new messages to the thread (so the UI sees them on next load/refresh) and update `lastRunAt` / `lastResult`.
 - `web/lib/bridge.ts` — call `ensureScheduler()` at module load so cron survives across HMR. (Or call from `web/app/api/chat/route.ts` on first hit.)
@@ -180,7 +180,7 @@ You are executing one phase of a four-phase enhancement plan for **AgentChain**,
 - Cost / usage dashboards (Claude vs Codex spend over time).
 - Replay-from-card (re-run a previous tool call's prompt).
 - Multi-CLI parallel runs (Claude AND Codex on the same prompt with diff).
-- Exposing AgentChain itself as an MCP server.
+- Exposing Klimand itself as an MCP server.
 - Push notifications, toasts, SSE for scheduled-job completion (polling-via-thread is the v1 surface for Phase D).
 - Tightening the orchestrator's system prompt further — that work shipped in a prior plan and is verified.
 

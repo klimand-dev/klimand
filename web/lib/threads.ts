@@ -3,6 +3,8 @@ import path from "node:path";
 import os from "node:os";
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
+import { touchProject } from "./project-registry";
+import { schedulePush } from "./sync-github";
 
 export const ThreadKindSchema = z.enum(["chat", "scheduled"]);
 export type ThreadKind = z.infer<typeof ThreadKindSchema>;
@@ -14,14 +16,15 @@ export const ThreadSchema = z.object({
   scheduleId: z.string().optional(),
   sandbox: z.string(),
   projectPath: z.string().optional(),
+  context: z.string().optional(),
   createdAt: z.string(),
   lastTouched: z.string()
 });
 export type Thread = z.infer<typeof ThreadSchema>;
 
 function stateDir(): string {
-  if (process.env.AGENTCHAIN_STATE_DIR) return path.resolve(process.env.AGENTCHAIN_STATE_DIR);
-  return path.resolve(process.cwd(), "..", ".agentchain");
+  if (process.env.KLIMAND_STATE_DIR) return path.resolve(process.env.KLIMAND_STATE_DIR);
+  return path.resolve(process.cwd(), "..", ".klimand");
 }
 
 function threadsDir(): string {
@@ -37,7 +40,7 @@ function newId(): string {
 }
 
 function newSandboxPath(): string {
-  return path.join(os.tmpdir(), "agentchain-sandboxes", `sb-${randomBytes(4).toString("hex")}`);
+  return path.join(os.tmpdir(), "klimand-sandboxes", `sb-${randomBytes(4).toString("hex")}`);
 }
 
 async function atomicWrite(file: string, content: string): Promise<void> {
@@ -45,6 +48,7 @@ async function atomicWrite(file: string, content: string): Promise<void> {
   const tmp = `${file}.tmp-${randomBytes(4).toString("hex")}`;
   await writeFile(tmp, content, "utf8");
   await rename(tmp, file);
+  schedulePush();
 }
 
 export async function listThreads(): Promise<Thread[]> {
@@ -83,6 +87,8 @@ export async function createThread(input: {
   title?: string;
   kind?: ThreadKind;
   scheduleId?: string;
+  context?: string;
+  projectPath?: string;
 }): Promise<Thread> {
   const now = new Date().toISOString();
   const thread: Thread = {
@@ -90,11 +96,16 @@ export async function createThread(input: {
     title: input.title ?? defaultTitle(input.kind ?? "chat"),
     kind: input.kind ?? "chat",
     ...(input.scheduleId ? { scheduleId: input.scheduleId } : {}),
+    ...(input.context ? { context: input.context } : {}),
+    ...(input.projectPath ? { projectPath: input.projectPath } : {}),
     sandbox: newSandboxPath(),
     createdAt: now,
     lastTouched: now
   };
   await atomicWrite(threadFile(thread.id), JSON.stringify(thread, null, 2));
+  if (input.projectPath) {
+    void touchProject(input.projectPath).catch(() => undefined);
+  }
   return thread;
 }
 
@@ -122,6 +133,9 @@ export async function setThreadProject(id: string, projectPath: string | null): 
   else next.projectPath = projectPath;
   next.lastTouched = new Date().toISOString();
   await atomicWrite(threadFile(id), JSON.stringify(next, null, 2));
+  if (projectPath) {
+    void touchProject(projectPath).catch(() => undefined);
+  }
   return next;
 }
 

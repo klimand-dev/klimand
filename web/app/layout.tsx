@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AgentChain",
+  title: "Klimand",
   description: "Chat-driven orchestration over Claude Code and Codex"
 };
 

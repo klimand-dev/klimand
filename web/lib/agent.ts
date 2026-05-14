@@ -6,7 +6,7 @@ import type { DoctorReport, CliStatus } from "./doctor";
 const DEFAULT_MODEL = "gpt-5.4-mini";
 
 const BASE_INSTRUCTIONS = [
-  "You are AgentChain, a thin orchestrator. Your only job is to (a) decide which CLI to invoke (Claude Code or Codex), (b) write the prompt for it, (c) consume the resulting session summary, and (d) decide the next step — invoke another CLI, or stop.",
+  "You are Klimand, a thin orchestrator. Your only job is to (a) decide which CLI to invoke (Claude Code or Codex), (b) write the prompt for it, (c) consume the resulting session summary, and (d) decide the next step — invoke another CLI, or stop.",
   "",
   "You have two tools available:",
   "- run_claude_code: spawn Claude for reasoning-heavy work — planning, code review, design decisions, autonomous file edits.",
@@ -97,7 +97,7 @@ export function makeAgent(opts: {
     opts.projectDigest?.trim() ?? ""
   ].filter((s) => s.length > 0);
   return new Agent({
-    name: "AgentChain",
+    name: "Klimand",
     model,
     instructions: sections.join("\n\n"),
     tools: [runClaudeCode, runCodex]

@@ -12,7 +12,7 @@ interface AssistantProps {
 }
 
 function messagesKey(threadId: string): string {
-  return `agentchain:thread:${threadId}:messages`;
+  return `klimand:thread:${threadId}:messages`;
 }
 
 function loadInitialMessages(threadId: string): UIMessage[] {

@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import path from "node:path";
 import { AuditLog } from "./audit.js";
-import { AgentChainConfig, AgentResult, Goal, ProviderName, Step } from "./types.js";
+import { KlimandConfig, AgentResult, Goal, ProviderName, Step } from "./types.js";
 import { StateStore } from "./state.js";
 import { ensureDir, id, nowIso, sha256, writeJson } from "./util.js";
 import { runProvider } from "./providers.js";
@@ -27,7 +27,7 @@ export class Orchestrator {
   readonly events = new EventEmitter();
 
   constructor(
-    private readonly config: AgentChainConfig,
+    private readonly config: KlimandConfig,
     private readonly store: StateStore,
     private readonly audit: AuditLog
   ) {}

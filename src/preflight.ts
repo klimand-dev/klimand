@@ -1,6 +1,6 @@
 import { access } from "node:fs/promises";
 import { constants } from "node:fs";
-import { AgentChainConfig, ProviderName } from "./types.js";
+import { KlimandConfig, ProviderName } from "./types.js";
 import { runProcess } from "./process-runner.js";
 
 export type PreflightLevel = "ok" | "warn" | "fail";
@@ -11,7 +11,7 @@ export interface PreflightCheck {
   detail: string;
 }
 
-export async function preflight(config: AgentChainConfig, cwd: string): Promise<PreflightCheck[]> {
+export async function preflight(config: KlimandConfig, cwd: string): Promise<PreflightCheck[]> {
   const checks: PreflightCheck[] = [];
   checks.push(await checkNodeSqlite());
   checks.push(await checkWritable(cwd));
@@ -43,7 +43,7 @@ async function checkNodeSqlite(): Promise<PreflightCheck> {
   }
 }
 
-async function checkCodexAuth(config: AgentChainConfig): Promise<PreflightCheck> {
+async function checkCodexAuth(config: KlimandConfig): Promise<PreflightCheck> {
   const command = config.providers.codex.command;
   try {
     const result = await runProcess(command, ["login", "status"], {
@@ -69,7 +69,7 @@ async function checkWritable(cwd: string): Promise<PreflightCheck> {
   }
 }
 
-async function checkProvider(provider: ProviderName, config: AgentChainConfig): Promise<PreflightCheck> {
+async function checkProvider(provider: ProviderName, config: KlimandConfig): Promise<PreflightCheck> {
   const command = config.providers[provider].command;
   try {
     const result = await runProcess(command, ["--version"], {
@@ -86,7 +86,7 @@ async function checkProvider(provider: ProviderName, config: AgentChainConfig): 
   }
 }
 
-function checkBypassMode(config: AgentChainConfig): PreflightCheck {
+function checkBypassMode(config: KlimandConfig): PreflightCheck {
   const bypasses: string[] = [];
   if (hasConsecutivePair(config.providers.codex.args, "--ask-for-approval", "never")) {
     bypasses.push("codex --ask-for-approval never");

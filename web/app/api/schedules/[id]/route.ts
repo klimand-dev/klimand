@@ -11,7 +11,8 @@ const PatchSchema = z.object({
   name: z.string().min(1).optional(),
   cron: z.string().min(1).optional(),
   prompt: z.string().min(1).optional(),
-  enabled: z.boolean().optional()
+  enabled: z.boolean().optional(),
+  hosted: z.boolean().optional()
 });
 
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }): Promise<Response> {

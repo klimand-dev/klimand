@@ -32,8 +32,8 @@ export interface AuditEvent {
 }
 
 function resolveStateDir(): string {
-  if (process.env.AGENTCHAIN_STATE_DIR) return path.resolve(process.env.AGENTCHAIN_STATE_DIR);
-  return path.resolve(process.cwd(), "..", ".agentchain");
+  if (process.env.KLIMAND_STATE_DIR) return path.resolve(process.env.KLIMAND_STATE_DIR);
+  return path.resolve(process.cwd(), "..", ".klimand");
 }
 
 let stateDirCache: string | null = null;
