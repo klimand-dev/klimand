@@ -42,7 +42,7 @@ body {
   background-attachment: fixed;
 }
 
-.container { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem; }
+.container { max-width: 1080px; margin: 0 auto; padding-left: 1.25rem; padding-right: 1.25rem; }
 
 a { color: var(--fg); text-decoration: none; }
 a:hover { color: var(--accent); }
@@ -91,7 +91,7 @@ section .lede code,
   display: grid;
   grid-template-columns: 1fr;
   gap: 3rem;
-  align-items: center;
+  align-items: start;
 }
 
 .hero-copy { max-width: 56ch; }
@@ -114,6 +114,19 @@ section .lede code,
   background: rgba(163, 169, 179, 0.05);
   border-color: rgba(163, 169, 179, 0.22);
   margin-bottom: 0.75rem;
+}
+.pill-inline {
+  display: inline-block;
+  font: 500 0.65rem/1 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-fg);
+  background: rgba(163, 169, 179, 0.08);
+  border: 1px solid rgba(163, 169, 179, 0.22);
+  padding: 0.18rem 0.45rem;
+  border-radius: 999px;
+  margin-left: 0.45rem;
+  vertical-align: middle;
 }
 
 .wordmark {
@@ -371,21 +384,31 @@ section .lede code,
   padding: 1rem;
   overflow-x: auto;
   font-size: 0.82rem;
-}
-.term-pre {
-  margin: 0;
   font-family: var(--font-mono);
   color: var(--fg);
-  white-space: pre;
   line-height: 1.55;
 }
-.term-pre .hl {
+.term-body .t-line {
+  white-space: pre;
+  font-family: var(--font-mono);
+}
+.term-body .hl {
   color: var(--accent);
   background: rgba(106, 216, 196, 0.08);
   border-radius: 3px;
   padding: 0 0.2em;
 }
-.term-pre .ok { color: var(--emerald); font-weight: 600; }
+.term-body .ok { color: var(--emerald); font-weight: 600; }
+
+/* Pill stack: RUNNING and DONE share one slot; the loop animation swaps which is visible */
+.brand-status-stack {
+  display: inline-grid;
+  grid-template-areas: "stack";
+}
+.brand-status-stack > .brand-status { grid-area: stack; }
+/* Static default state (no animation / reduced motion): show DONE, hide RUNNING */
+.brand-status-stack > .brand-status-running { opacity: 0; }
+.brand-status-stack > .brand-status-done { opacity: 1; }
 
 .cursor {
   display: inline-block;
@@ -509,6 +532,89 @@ footer {
   opacity: 1;
   transform: none;
 }
+
+/* Hero chat — looping reveal:
+ *  user prompt → assistant reasoning → Claude card mounts (RUNNING)
+ *  → Claude lines stream in → pill flips to DONE
+ *  → Codex card mounts (RUNNING) → Codex lines stream in → hold → fade → loop
+ * Single 18s cycle; every animated element shares the cycle boundary so the fade-out is synchronized. */
+@media (prefers-reduced-motion: no-preference) {
+  .chat.in-view .chat-thread > :nth-child(1) { animation: hero-chat-step-1 18s ease-in-out infinite; }
+  .chat.in-view .chat-thread > :nth-child(2) { animation: hero-chat-step-2 18s ease-in-out infinite; }
+  .chat.in-view .chat-thread > :nth-child(3) { animation: hero-chat-step-3 18s ease-in-out infinite; }
+  .chat.in-view .chat-thread > :nth-child(4) { animation: hero-chat-step-4 18s ease-in-out infinite; }
+
+  .chat.in-view .term-body[data-stream="claude"] .t-line:nth-child(1) { animation: claude-line-1 18s ease-in-out infinite; }
+  .chat.in-view .term-body[data-stream="claude"] .t-line:nth-child(2) { animation: claude-line-2 18s ease-in-out infinite; }
+  .chat.in-view .term-body[data-stream="claude"] .t-line:nth-child(3) { animation: claude-line-3 18s ease-in-out infinite; }
+  .chat.in-view .term-body[data-stream="claude"] .t-line:nth-child(4) { animation: claude-line-4 18s ease-in-out infinite; }
+  .chat.in-view .term-body[data-stream="claude"] .t-line:nth-child(5) { animation: claude-line-5 18s ease-in-out infinite; }
+  .chat.in-view .term-body[data-stream="claude"] .t-line:nth-child(6) { animation: claude-line-6 18s ease-in-out infinite; }
+
+  .chat.in-view .brand-status-stack > .brand-status-running { animation: claude-pill-running 18s ease-in-out infinite; }
+  .chat.in-view .brand-status-stack > .brand-status-done    { animation: claude-pill-done    18s ease-in-out infinite; }
+
+  .chat.in-view .term-body[data-stream="codex"] .t-line:nth-child(1) { animation: codex-line-1 18s ease-in-out infinite; }
+  .chat.in-view .term-body[data-stream="codex"] .t-line:nth-child(2) { animation: codex-line-2 18s ease-in-out infinite; }
+  .chat.in-view .term-body[data-stream="codex"] .t-line:nth-child(3) { animation: codex-line-3 18s ease-in-out infinite; }
+  .chat.in-view .term-body[data-stream="codex"] .t-line:nth-child(4) { animation: codex-line-4 18s ease-in-out infinite; }
+  .chat.in-view .term-body[data-stream="codex"] .t-line:nth-child(5) { animation: codex-line-5 18s ease-in-out infinite; }
+}
+
+/* Top-level reveal: user → assistant → Claude card → Codex card */
+@keyframes hero-chat-step-1 {
+  0%, 1%   { opacity: 0; transform: translateY(8px); }
+  4%       { opacity: 1; transform: none; }
+  92%      { opacity: 1; transform: none; }
+  100%     { opacity: 0; transform: translateY(-4px); }
+}
+@keyframes hero-chat-step-2 {
+  0%, 9%   { opacity: 0; transform: translateY(8px); }
+  12%      { opacity: 1; transform: none; }
+  92%      { opacity: 1; transform: none; }
+  100%     { opacity: 0; transform: translateY(-4px); }
+}
+@keyframes hero-chat-step-3 {
+  0%, 18%  { opacity: 0; transform: translateY(14px); }
+  22%      { opacity: 1; transform: none; }
+  92%      { opacity: 1; transform: none; }
+  100%     { opacity: 0; transform: translateY(-4px); }
+}
+@keyframes hero-chat-step-4 {
+  0%, 44%  { opacity: 0; transform: translateY(14px); }
+  48%      { opacity: 1; transform: none; }
+  92%      { opacity: 1; transform: none; }
+  100%     { opacity: 0; transform: translateY(-4px); }
+}
+
+/* Claude terminal lines stream in 22%-40% (~4-7.2s) while RUNNING pill is up */
+@keyframes claude-line-1 { 0%, 22% { opacity: 0; transform: translateY(3px); } 25%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes claude-line-2 { 0%, 25% { opacity: 0; transform: translateY(3px); } 28%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes claude-line-3 { 0%, 28% { opacity: 0; transform: translateY(3px); } 31%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes claude-line-4 { 0%, 31% { opacity: 0; transform: translateY(3px); } 34%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes claude-line-5 { 0%, 34% { opacity: 0; transform: translateY(3px); } 37%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes claude-line-6 { 0%, 37% { opacity: 0; transform: translateY(3px); } 40%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+
+/* Claude pill swap: RUNNING up 20-40%, then DONE takes over from 42% */
+@keyframes claude-pill-running {
+  0%, 17%  { opacity: 0; }
+  20%, 38% { opacity: 1; }
+  41%      { opacity: 0; }
+  100%     { opacity: 0; }
+}
+@keyframes claude-pill-done {
+  0%, 40%  { opacity: 0; }
+  42%, 92% { opacity: 1; }
+  100%     { opacity: 0; }
+}
+
+/* Codex terminal lines stream in 48%-63% (~8.6-11.3s) while RUNNING pill stays */
+@keyframes codex-line-1 { 0%, 48% { opacity: 0; transform: translateY(3px); } 51%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes codex-line-2 { 0%, 51% { opacity: 0; transform: translateY(3px); } 54%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes codex-line-3 { 0%, 54% { opacity: 0; transform: translateY(3px); } 57%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes codex-line-4 { 0%, 57% { opacity: 0; transform: translateY(3px); } 60%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes codex-line-5 { 0%, 60% { opacity: 0; transform: translateY(3px); } 63%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+
 @media (prefers-reduced-motion: reduce) {
   .fade-in { opacity: 1; transform: none; transition: none; }
   .cursor, .brand-status::before { animation: none; }

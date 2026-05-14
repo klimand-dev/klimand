@@ -6,6 +6,7 @@ import { getPrefs } from "./prefs";
 import { getDoctor } from "./doctor";
 import { touchThread, getThread } from "./threads";
 import { getProfile } from "./project-profile";
+import { getRegistry } from "./klimand-skills";
 
 type AnyMessagePart = { type: string; text?: string };
 
@@ -94,7 +95,14 @@ export function runAgentAsUIStream(messages: UIMessage[], opts: { threadId?: str
         }
         if (thread?.context) threadContext = thread.context;
       }
-      const agent = makeAgent({ prefs, doctor, projectDigest });
+      const skillRegistry = await getRegistry({ projectPath: projectPath ?? null }).catch(() => undefined);
+      const agent = makeAgent({
+        prefs,
+        doctor,
+        projectDigest,
+        skillRegistry,
+        hasProject: Boolean(projectPath)
+      });
       const input = messagesToAgentInput(messages);
       if (threadContext) {
         input.unshift(system(`Thread context (from URL ingest):\n${threadContext}`));

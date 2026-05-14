@@ -8,8 +8,9 @@ import {
   unstable_memoizeMarkdownComponents as memoizeMarkdownComponents,
   useIsMarkdownCodeBlock,
 } from "@assistant-ui/react-markdown";
+import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { type FC, memo, useState } from "react";
+import { type FC, type ReactNode, memo, useState } from "react";
 import { CheckIcon, CopyIcon } from "lucide-react";
 
 import { TooltipIconButton } from "@/components/tooltip-icon-button";
@@ -26,6 +27,145 @@ const MarkdownTextImpl = () => {
 };
 
 export const MarkdownText = memo(MarkdownTextImpl);
+
+// Plain markdown renderer for content that lives outside an assistant-ui
+// MessagePart context (e.g. tool-card panels). MarkdownTextPrimitive reads
+// its text via useMessagePartText(), so it cannot be reused here. The
+// component map below mirrors defaultComponents' styling but skips the
+// assistant-ui-specific hooks (useIsMarkdownCodeBlock) and custom slots
+// (CodeHeader) that only work inside MarkdownTextPrimitive.
+const plainMarkdownComponents = {
+  h1: ({ className, ...props }: { className?: string }) => (
+    <h1
+      className={cn(
+        "aui-md-h1 mb-2 scroll-m-20 font-semibold text-base first:mt-0 last:mb-0",
+        className,
+      )}
+      {...props}
+    />
+  ),
+  h2: ({ className, ...props }: { className?: string }) => (
+    <h2
+      className={cn(
+        "aui-md-h2 mt-3 mb-1.5 scroll-m-20 font-semibold text-sm first:mt-0 last:mb-0",
+        className,
+      )}
+      {...props}
+    />
+  ),
+  h3: ({ className, ...props }: { className?: string }) => (
+    <h3
+      className={cn(
+        "aui-md-h3 mt-2.5 mb-1 scroll-m-20 font-semibold text-sm first:mt-0 last:mb-0",
+        className,
+      )}
+      {...props}
+    />
+  ),
+  h4: ({ className, ...props }: { className?: string }) => (
+    <h4
+      className={cn(
+        "aui-md-h4 mt-2 mb-1 scroll-m-20 font-medium text-sm first:mt-0 last:mb-0",
+        className,
+      )}
+      {...props}
+    />
+  ),
+  p: ({ className, ...props }: { className?: string }) => (
+    <p
+      className={cn(
+        "aui-md-p my-2.5 leading-normal first:mt-0 last:mb-0",
+        className,
+      )}
+      {...props}
+    />
+  ),
+  a: ({ className, ...props }: { className?: string }) => (
+    <a
+      className={cn(
+        "aui-md-a text-primary underline underline-offset-2 hover:text-primary/80",
+        className,
+      )}
+      {...props}
+    />
+  ),
+  blockquote: ({ className, ...props }: { className?: string }) => (
+    <blockquote
+      className={cn(
+        "aui-md-blockquote my-2.5 border-muted-foreground/30 border-s-2 ps-3 text-muted-foreground italic",
+        className,
+      )}
+      {...props}
+    />
+  ),
+  ul: ({ className, ...props }: { className?: string }) => (
+    <ul
+      className={cn(
+        "aui-md-ul my-2 ms-4 list-disc marker:text-muted-foreground [&>li]:mt-1",
+        className,
+      )}
+      {...props}
+    />
+  ),
+  ol: ({ className, ...props }: { className?: string }) => (
+    <ol
+      className={cn(
+        "aui-md-ol my-2 ms-4 list-decimal marker:text-muted-foreground [&>li]:mt-1",
+        className,
+      )}
+      {...props}
+    />
+  ),
+  hr: ({ className, ...props }: { className?: string }) => (
+    <hr
+      className={cn("aui-md-hr my-2 border-muted-foreground/20", className)}
+      {...props}
+    />
+  ),
+  li: ({ className, ...props }: { className?: string }) => (
+    <li className={cn("aui-md-li leading-normal", className)} {...props} />
+  ),
+  pre: ({ className, ...props }: { className?: string }) => (
+    <pre
+      className={cn(
+        "aui-md-pre overflow-x-auto rounded-lg border border-border/50 bg-muted/30 p-3 text-xs leading-relaxed",
+        className,
+      )}
+      {...props}
+    />
+  ),
+  code: ({ className, ...props }: { className?: string; children?: ReactNode }) => {
+    // react-markdown emits <code className="language-xxx"> for fenced blocks
+    // and bare <code> for inline. Heuristic: presence of a language class.
+    const isBlock = typeof className === "string" && /\blanguage-/.test(className);
+    return (
+      <code
+        className={cn(
+          !isBlock &&
+            "aui-md-inline-code rounded-md border border-border/50 bg-muted/50 px-1.5 py-0.5 font-mono text-[0.85em]",
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
+};
+
+function PlainMarkdownImpl({ text }: { text: string }) {
+  return (
+    <div className="aui-md">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        components={plainMarkdownComponents as any}
+      >
+        {text}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
+export const PlainMarkdown = memo(PlainMarkdownImpl);
 
 const CodeHeader: FC<CodeHeaderProps> = ({ language, code }) => {
   const { isCopied, copyToClipboard } = useCopyToClipboard();

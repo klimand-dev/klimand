@@ -2,6 +2,7 @@ import { Agent } from "@openai/agents";
 import { runClaudeCode, runCodex } from "./cli-tools";
 import type { AgentPrefs } from "./prefs";
 import type { DoctorReport, CliStatus } from "./doctor";
+import { consult, renderConsultedSkills, type KlimandSkillRegistry } from "./klimand-skills";
 
 const DEFAULT_MODEL = "gpt-5.4-mini";
 
@@ -88,13 +89,20 @@ export function makeAgent(opts: {
   prefs: AgentPrefs;
   doctor: DoctorReport;
   projectDigest?: string;
+  skillRegistry?: KlimandSkillRegistry;
+  hasProject?: boolean;
 }): Agent {
   const model = process.env.OPENAI_AGENT_MODEL ?? DEFAULT_MODEL;
+  const dispatchSkills = opts.skillRegistry
+    ? consult(opts.skillRegistry, "sub-task-dispatch", { hasProject: opts.hasProject })
+    : [];
+  const skillsBlock = renderConsultedSkills(dispatchSkills, "sub-task-dispatch");
   const sections = [
     BASE_INSTRUCTIONS,
     buildAvailabilitySection(opts.doctor),
     buildHintsSection(opts.prefs.routingHints),
-    opts.projectDigest?.trim() ?? ""
+    opts.projectDigest?.trim() ?? "",
+    skillsBlock
   ].filter((s) => s.length > 0);
   return new Agent({
     name: "Klimand",

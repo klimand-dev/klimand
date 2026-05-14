@@ -28,11 +28,11 @@
       <div class="hero-copy fade-in">
         <span class="pill">Open source · Apache-2.0</span>
         <h1 class="wordmark">Klimand</h1>
-        <p class="tag">One chat. Two agents. Real project awareness.</p>
+        <p class="tag">Run your coding agents while you sleep.</p>
         <p class="lede">
-          A local orchestrator UI that drives <strong>Claude Code</strong> and <strong>Codex</strong> from a single chat —
-          and actually reads your <code>CLAUDE.md</code>, <code>AGENTS.md</code>, <code>.mcp.json</code>, slash commands,
-          subagents, skills, and hooks before deciding what to do.
+          Klimand drives <strong>Claude Code</strong> and <strong>Codex</strong> across long, durable goals — leveraging your
+          <code>CLAUDE.md</code>, <code>AGENTS.md</code>, <code>.mcp.json</code>, slash commands, subagents, skills, and hooks
+          to get more out of the subscriptions you already pay for.
         </p>
         <p class="cta-row">
           <code class="cmd">npx klimand</code>
@@ -61,7 +61,10 @@
               <span class="brand-wordmark">Claude Code</span>
               <span class="brand-divider" aria-hidden="true"></span>
               <span class="brand-workspace">~/code/auth-svc</span>
-              <span class="brand-status brand-status-done">done</span>
+              <span class="brand-status-stack">
+                <span class="brand-status brand-status-running">running</span>
+                <span class="brand-status brand-status-done">done</span>
+              </span>
             </div>
             <div class="term">
               <div class="term-head">
@@ -74,13 +77,13 @@
                   <span class="term-exit term-exit-ok">0</span>
                 </span>
               </div>
-              <div class="term-body">
-<pre class="term-pre">Reading <span class="hl">src/middleware/auth.ts</span>…
-Found 3 callsites of <span class="hl">getSession()</span>
-Applying refactor:
-  <span class="ok">✓</span> src/middleware/auth.ts
-  <span class="ok">✓</span> src/routes/login.ts
-  <span class="ok">✓</span> src/routes/logout.ts</pre>
+              <div class="term-body" data-stream="claude">
+                <div class="t-line">Reading <span class="hl">src/middleware/auth.ts</span>…</div>
+                <div class="t-line">Found 3 callsites of <span class="hl">getSession()</span></div>
+                <div class="t-line">Applying refactor:</div>
+                <div class="t-line">  <span class="ok">✓</span> src/middleware/auth.ts</div>
+                <div class="t-line">  <span class="ok">✓</span> src/routes/login.ts</div>
+                <div class="t-line">  <span class="ok">✓</span> src/routes/logout.ts</div>
               </div>
             </div>
           </div>
@@ -106,12 +109,12 @@ Applying refactor:
                   <span class="term-duration">12.4s</span>
                 </span>
               </div>
-              <div class="term-body">
-<pre class="term-pre">$ pnpm vitest run --reporter=verbose
- <span class="ok">✓</span> auth/middleware.test.ts (4 tests)
- <span class="ok">✓</span> routes/login.test.ts (3 tests)
- <span class="ok">✓</span> routes/logout.test.ts (2 tests)
-Patching <span class="hl">session.test.ts</span> for the new API<span class="cursor" aria-hidden="true">▍</span></pre>
+              <div class="term-body" data-stream="codex">
+                <div class="t-line">$ pnpm vitest run --reporter=verbose</div>
+                <div class="t-line"> <span class="ok">✓</span> auth/middleware.test.ts (4 tests)</div>
+                <div class="t-line"> <span class="ok">✓</span> routes/login.test.ts (3 tests)</div>
+                <div class="t-line"> <span class="ok">✓</span> routes/logout.test.ts (2 tests)</div>
+                <div class="t-line">Patching <span class="hl">session.test.ts</span> for the new API<span class="cursor" aria-hidden="true">▍</span></div>
               </div>
             </div>
           </div>
@@ -122,29 +125,29 @@ Patching <span class="hl">session.test.ts</span> for the new API<span class="cur
 
   <main>
     <section class="features container fade-in">
-      <h2>Free, open source, local-first</h2>
+      <h2>Get more out of your coding-agent subscriptions</h2>
       <p class="section-lede">The local app does the work. Your CLIs use their own auth. Your project's config decides the routing.</p>
       <div class="card-grid">
         <article class="card">
           <span class="icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m16 8-4 4-4 4 4-4 4-4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>
           </span>
-          <h3>Auto-discovery</h3>
-          <p>Scans your home directory + common dev folders on first run. Approve the projects you want; ignore the rest.</p>
+          <h3>Project-aware routing</h3>
+          <p>Reads <code>CLAUDE.md</code>, <code>AGENTS.md</code>, <code>.mcp.json</code>, slash commands, subagents, skills, hooks. Routes each turn to whichever CLI fits.</p>
+        </article>
+        <article class="card">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 7v6c0 5 3.5 8.5 8 9 4.5-.5 8-4 8-9V7l-8-5z"/></svg>
+          </span>
+          <h3>Klimand skill library</h3>
+          <p>The orchestrator has its own playbook — 12 base skills for decomposition, routing, prompt composition, evaluation. Override per project under <code>.klimand/skills/</code>.</p>
         </article>
         <article class="card">
           <span class="icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M6 16.5V11a4 4 0 0 1 4-4h5"/></svg>
           </span>
-          <h3>Project-aware routing</h3>
-          <p>Reads your <code>CLAUDE.md</code>, <code>AGENTS.md</code>, <code>.mcp.json</code>, slash commands and hooks. Routes each turn to whichever CLI fits.</p>
-        </article>
-        <article class="card">
-          <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg>
-          </span>
-          <h3>Threaded chats + schedules</h3>
-          <p>Persistent threads bound to a project. Fire-and-forget scheduled runs. A project view showing exactly what the orchestrator sees.</p>
+          <h3>Goal mode <span class="pill-inline">coming soon</span></h3>
+          <p>State an outcome; Klimand decomposes it into sub-tasks, drives them across Claude and Codex, waits on long sessions, and wakes you when it's done. Chat mode ships today; goal mode is in active build.</p>
         </article>
         <article class="card">
           <span class="icon" aria-hidden="true">

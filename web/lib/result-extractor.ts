@@ -10,6 +10,10 @@ export interface AgentSummary {
   exit_code: number;
   duration_ms: number;
   final_text: string;
+  // True when the parser extracted a real assistant message from structured
+  // CLI output. False when we fell back to a raw stdout tail — in that case
+  // final_text is NDJSON noise and should not be surfaced as markdown.
+  final_text_parsed: boolean;
   notes?: string[];
 }
 
@@ -94,6 +98,7 @@ export function summarize(
   }
 
   const notes: string[] = [];
+  const parsed = finalText !== null;
   if (!finalText) {
     finalText = tail(stdout.trim() || stderr.trim() || "(no output)", MAX_TAIL_BYTES);
     notes.push("structured-result parsing failed; falling back to stdout tail");
@@ -110,6 +115,7 @@ export function summarize(
     exit_code: meta.exitCode,
     duration_ms: meta.durationMs,
     final_text: finalText,
+    final_text_parsed: parsed,
     notes: notes.length > 0 ? notes : undefined
   };
 }

@@ -108,6 +108,7 @@ export function ProjectView({ path, threadsInProject, onSelectThread }: ProjectV
           <ClaudeSection profile={profile} projectPath={path} />
           <CodexSection profile={profile} projectPath={path} />
           <SharedSection profile={profile} projectPath={path} />
+          <KlimandSkillsSection projectPath={path} />
           <ThreadsSection threads={threadsInProject} onSelect={onSelectThread} />
           {profile.warnings.length > 0 ? <WarningsSection warnings={profile.warnings} /> : null}
           <RawDigestSection digest={digest} digestBytes={digestBytes} />
@@ -486,6 +487,155 @@ function WarningsSection({ warnings }: { warnings: string[] }): React.ReactEleme
         ))}
       </ul>
     </section>
+  );
+}
+
+interface KlimandSkillRow {
+  name: string;
+  description: string;
+  triggers: string[];
+  appliesWhen?: string;
+  version: string;
+  source: "bundled" | "user" | "project";
+  path: string;
+}
+
+interface KlimandSkillError {
+  path: string;
+  source: "bundled" | "user" | "project";
+  message: string;
+}
+
+interface KlimandSkillsResponse {
+  skills?: KlimandSkillRow[];
+  errors?: KlimandSkillError[];
+  error?: string;
+  message?: string;
+}
+
+function KlimandSkillsSection({ projectPath }: { projectPath: string }): React.ReactElement {
+  const [data, setData] = useState<KlimandSkillsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(
+    async (refresh: boolean) => {
+      const url = `/api/projects/skills?path=${encodeURIComponent(projectPath)}${refresh ? "&refresh=1" : ""}`;
+      const res = await fetch(url, { cache: "no-store" });
+      const json = (await res.json().catch(() => ({}))) as KlimandSkillsResponse;
+      setData(json);
+      setLoading(false);
+      setRefreshing(false);
+    },
+    [projectPath]
+  );
+
+  useEffect(() => {
+    setLoading(true);
+    load(false).catch(() => setLoading(false));
+  }, [load]);
+
+  const refresh = () => {
+    setRefreshing(true);
+    load(true).catch(() => setRefreshing(false));
+  };
+
+  const skills = data?.skills ?? [];
+  const errors = data?.errors ?? [];
+  const byKind = {
+    bundled: skills.filter((s) => s.source === "bundled"),
+    user: skills.filter((s) => s.source === "user"),
+    project: skills.filter((s) => s.source === "project")
+  };
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-baseline gap-2 border-b border-border pb-1">
+        <span className="flex-1 font-mono text-xs font-semibold uppercase tracking-wide text-foreground">
+          Klimand skills <span className="text-muted-foreground">({skills.length})</span>
+        </span>
+        <button
+          type="button"
+          onClick={refresh}
+          disabled={refreshing}
+          className="rounded border border-border bg-card px-2 py-0.5 font-mono text-[10px] text-muted-foreground hover:text-foreground disabled:opacity-50"
+        >
+          {refreshing ? "scanning…" : "refresh"}
+        </button>
+      </div>
+      {loading ? (
+        <div className="font-mono text-xs italic text-muted-foreground">loading…</div>
+      ) : data?.error ? (
+        <div className="rounded border border-red-700/50 bg-red-900/10 px-3 py-2 font-mono text-[11px] text-red-300">
+          {data.message ?? data.error}
+        </div>
+      ) : (
+        <>
+          <KlimandSkillGroup label="Project-local" kind="project" rows={byKind.project} emptyHint=".klimand/skills/ — add files here to override" />
+          <KlimandSkillGroup label="User" kind="user" rows={byKind.user} emptyHint="state dir skills/ — add files here for cross-project skills" />
+          <KlimandSkillGroup label="Bundled (base pack)" kind="bundled" rows={byKind.bundled} emptyHint="bundled skills missing — check installation" />
+          {errors.length > 0 ? (
+            <div className="rounded border border-amber-700/50 bg-amber-900/10 px-3 py-2 font-mono text-[11px] text-amber-200">
+              <div className="mb-1 font-semibold">{errors.length} skill file{errors.length === 1 ? "" : "s"} failed to load</div>
+              <ul className="flex flex-col gap-0.5">
+                {errors.map((e, i) => (
+                  <li key={`${e.path}-${i}`} className="truncate" title={`${e.path}: ${e.message}`}>
+                    [{e.source}] {e.path}: {e.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </>
+      )}
+    </section>
+  );
+}
+
+function KlimandSkillGroup({
+  label,
+  kind,
+  rows,
+  emptyHint
+}: {
+  label: string;
+  kind: "bundled" | "user" | "project";
+  rows: KlimandSkillRow[];
+  emptyHint: string;
+}): React.ReactElement {
+  return (
+    <div className="rounded border border-border bg-background/40">
+      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+        <span className="flex-1 font-mono text-xs font-semibold">
+          {label} <span className="text-muted-foreground">({rows.length})</span>
+        </span>
+        <span className="font-mono text-[10px] text-muted-foreground">{kind}</span>
+      </div>
+      {rows.length === 0 ? (
+        <div className="px-3 py-2 font-mono text-[11px] italic text-muted-foreground">{emptyHint}</div>
+      ) : (
+        <ul className="flex flex-col">
+          {rows.map((s) => (
+            <li key={`${s.source}:${s.name}`} className="flex flex-col gap-0.5 border-b border-border/40 px-3 py-2 last:border-b-0">
+              <div className="flex items-baseline gap-2">
+                <span className="font-mono text-xs font-semibold text-foreground">{s.name}</span>
+                <span className="font-mono text-[10px] text-muted-foreground">v{s.version}</span>
+                <span className="font-mono text-[10px] text-muted-foreground">·</span>
+                <span className="font-mono text-[10px] text-muted-foreground">{s.triggers.join(", ")}</span>
+              </div>
+              {s.description ? (
+                <span className="font-mono text-[10px] text-muted-foreground" title={s.description}>
+                  {s.description}
+                </span>
+              ) : null}
+              {s.appliesWhen ? (
+                <span className="font-mono text-[10px] text-muted-foreground">when: <code>{s.appliesWhen}</code></span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

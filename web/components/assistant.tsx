@@ -6,6 +6,7 @@ import type { UIMessage } from "ai";
 import { AssistantChatTransport, useChatRuntime } from "@assistant-ui/react-ai-sdk";
 import { Thread } from "@/components/thread";
 import { toolkit } from "@/components/toolkit";
+import { GoalSuggestBanner } from "@/components/goal-suggest-banner";
 
 interface AssistantProps {
   threadId: string;
@@ -54,7 +55,14 @@ export function Assistant({ threadId }: AssistantProps): React.ReactElement {
 
   return (
     <AssistantRuntimeProvider runtime={runtime} aui={aui}>
-      <Thread />
+      <div className="flex h-full flex-col">
+        <div className="px-4 pt-3">
+          <GoalSuggestBanner threadId={threadId} />
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <Thread />
+        </div>
+      </div>
     </AssistantRuntimeProvider>
   );
 }

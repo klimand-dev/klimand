@@ -149,6 +149,7 @@ async function runToolAndSummarize(spec: ToolRunSpec): Promise<AgentSummary> {
         exit_code: 0,
         duration_ms: durationMs,
         final_text: `User rejected the proposed ${spec.provider} invocation.`,
+        final_text_parsed: false,
         notes: ["rejected by user"]
       };
       await appendAudit({
@@ -196,6 +197,7 @@ async function runToolAndSummarize(spec: ToolRunSpec): Promise<AgentSummary> {
         exit_code: exitCode,
         duration_ms: result.durationMs,
         final_text: `${spec.provider} run cancelled by user`,
+        final_text_parsed: false,
         notes: ["cancelled by user"]
       };
     } else {
@@ -217,6 +219,7 @@ async function runToolAndSummarize(spec: ToolRunSpec): Promise<AgentSummary> {
       exit_code: 1,
       duration_ms: durationMs,
       final_text: `Failed to launch ${spec.provider} CLI: ${message}`,
+      final_text_parsed: false,
       notes: ["spawn or timeout error before the CLI produced output"]
     };
   }
