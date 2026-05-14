@@ -7,6 +7,7 @@ import { getDoctor } from "./doctor";
 import { touchThread, getThread } from "./threads";
 import { getProfile } from "./project-profile";
 import { getRegistry } from "./klimand-skills";
+import { markThreadTurnStart, markThreadTurnEnd } from "./thread-status";
 
 type AnyMessagePart = { type: string; text?: string };
 
@@ -116,6 +117,13 @@ export function runAgentAsUIStream(messages: UIMessage[], opts: { threadId?: str
       writer.write({ type: "start" });
       writer.write({ type: "start-step" });
 
+      // Mark the turn-start anchor for the row-level live elapsed pill.
+      // Best-effort: a failed sidecar write should not abort the turn.
+      const turnStartedAt = Date.now();
+      if (opts.threadId) {
+        await markThreadTurnStart(opts.threadId).catch(() => {});
+      }
+
       const openTextIds = new Set<string>();
       let currentTextId: string | null = null;
       const openTool = (id: string, name: string) => {
@@ -185,6 +193,7 @@ export function runAgentAsUIStream(messages: UIMessage[], opts: { threadId?: str
 
       if (opts.threadId) {
         await touchThread(opts.threadId).catch(() => {});
+        await markThreadTurnEnd(opts.threadId, turnStartedAt).catch(() => {});
       }
     }
   });

@@ -85,6 +85,8 @@ export function AgentToolCard({
     live.complete ?? false,
     live.cancelled ?? false
   );
+  const startedAt = live.startedAt ?? null;
+  const isRunning = cardStatus === "running" || cardStatus === "pending";
 
   const onCancel = useCallback(async () => {
     if (cancelInFlight) return;
@@ -128,6 +130,8 @@ export function AgentToolCard({
         cwd={workspace || undefined}
         exitCode={exitCode}
         durationMs={durationMs}
+        startedAt={startedAt}
+        isRunning={isRunning}
         stdout={stdout || undefined}
         stderr={stderr || undefined}
         maxCollapsedLines={20}

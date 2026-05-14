@@ -24,9 +24,11 @@ interface ToolOutputEntry {
   command?: string;
   cwd?: string;
   provider?: "claude" | "codex";
+  threadId?: string;
   aborter?: () => void;
   pendingApproval?: PendingApproval;
   approvalResolver?: (decision: ApprovalDecision) => void;
+  startedAt?: number;
   updatedAt: number;
 }
 
@@ -80,12 +82,16 @@ export function appendStderr(toolCallId: string, chunk: string): void {
 
 export function markStarted(
   toolCallId: string,
-  meta: { provider: "claude" | "codex"; command: string; cwd: string }
+  meta: { provider: "claude" | "codex"; command: string; cwd: string; threadId?: string }
 ): void {
   const entry = ensure(toolCallId);
   entry.provider = meta.provider;
   entry.command = meta.command;
   entry.cwd = meta.cwd;
+  if (meta.threadId) entry.threadId = meta.threadId;
+  // Anchor for the client-side live timer. Use ?? so re-invocation (e.g. after
+  // an approval-edit reroll) doesn't reset the user-visible clock.
+  if (entry.startedAt == null) entry.startedAt = Date.now();
   entry.updatedAt = Date.now();
 }
 
@@ -156,6 +162,35 @@ export interface ToolOutputSnapshot {
   cwd: string | null;
   provider: "claude" | "codex" | null;
   pendingApproval: PendingApproval | null;
+  startedAt: number | null;
+}
+
+export interface ThreadBrokerSummary {
+  runningCount: number;
+  pendingApprovalCount: number;
+  earliestRunningStartedAt: number | null;
+}
+
+// Aggregate the broker's view of a single thread. Cheap: walks the in-memory
+// Map once. Used by /api/threads/status to power sidebar badges across all
+// threads without re-loading their message lists.
+export function summarizeThread(threadId: string): ThreadBrokerSummary {
+  let runningCount = 0;
+  let pendingApprovalCount = 0;
+  let earliestRunningStartedAt: number | null = null;
+  for (const entry of store.values()) {
+    if (entry.threadId !== threadId) continue;
+    if (!entry.complete) {
+      runningCount += 1;
+      if (entry.startedAt != null) {
+        if (earliestRunningStartedAt == null || entry.startedAt < earliestRunningStartedAt) {
+          earliestRunningStartedAt = entry.startedAt;
+        }
+      }
+    }
+    if (entry.pendingApproval) pendingApprovalCount += 1;
+  }
+  return { runningCount, pendingApprovalCount, earliestRunningStartedAt };
 }
 
 export function getSnapshot(toolCallId: string): ToolOutputSnapshot | null {
@@ -171,6 +206,7 @@ export function getSnapshot(toolCallId: string): ToolOutputSnapshot | null {
     command: entry.command ?? null,
     cwd: entry.cwd ?? null,
     provider: entry.provider ?? null,
-    pendingApproval: entry.pendingApproval ?? null
+    pendingApproval: entry.pendingApproval ?? null,
+    startedAt: entry.startedAt ?? null
   };
 }

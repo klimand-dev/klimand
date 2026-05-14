@@ -39,6 +39,7 @@ import {
   CheckIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  Clock,
   CopyIcon,
   DownloadIcon,
   MoreHorizontalIcon,
@@ -46,7 +47,8 @@ import {
   RefreshCwIcon,
   SquareIcon,
 } from "lucide-react";
-import type { FC } from "react";
+import { useEffect, useState, type FC } from "react";
+import { formatDuration } from "@/components/tool-ui/terminal/terminal";
 
 export const Thread: FC = () => {
   return (
@@ -299,6 +301,7 @@ const AssistantMessage: FC = () => {
           }}
         </MessagePrimitive.GroupedParts>
         <MessageError />
+        <ThreadElapsedChip />
       </div>
 
       <div
@@ -309,6 +312,66 @@ const AssistantMessage: FC = () => {
         <AssistantActionBar />
       </div>
     </MessagePrimitive.Root>
+  );
+};
+
+interface ThreadMessageLike {
+  id: string;
+  role: string;
+  createdAt?: Date | string | number;
+}
+
+const ThreadElapsedChip: FC = () => {
+  const messageId = useAuiState((s) => s.message.id);
+  const isRunning = useAuiState((s) => s.thread.isRunning);
+  const messages = useAuiState(
+    (s) => (s.thread.messages as unknown) as ThreadMessageLike[],
+  );
+
+  // Find this assistant message's index and the user message immediately before it.
+  const myIndex = messages.findIndex((m) => m.id === messageId);
+  let startedAt: number | null = null;
+  if (myIndex > 0) {
+    for (let i = myIndex - 1; i >= 0; i--) {
+      if (messages[i]!.role === "user") {
+        const raw = messages[i]!.createdAt;
+        const d = raw instanceof Date ? raw : raw != null ? new Date(raw) : null;
+        if (d && !Number.isNaN(d.getTime())) startedAt = d.getTime();
+        break;
+      }
+    }
+  }
+  const isLatestAssistant =
+    messageId != null && messages[messages.length - 1]?.id === messageId;
+
+  const [tickMs, setTickMs] = useState<number | null>(null);
+  const [frozenMs, setFrozenMs] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isLatestAssistant || !isRunning || startedAt == null) return;
+    const update = () => setTickMs(Date.now() - startedAt);
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [isLatestAssistant, isRunning, startedAt]);
+
+  useEffect(() => {
+    // Capture the final elapsed at the moment the turn settles in-session.
+    if (isLatestAssistant && !isRunning && tickMs != null && frozenMs == null) {
+      setFrozenMs(tickMs);
+    }
+  }, [isLatestAssistant, isRunning, tickMs, frozenMs]);
+
+  const elapsedMs =
+    frozenMs ?? (isLatestAssistant && isRunning ? tickMs : null);
+  const label = formatDuration(elapsedMs);
+  if (label == null) return null;
+
+  return (
+    <span className="bg-muted/50 text-foreground tabular-nums text-xs ms-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono">
+      <Clock className="h-3 w-3" />
+      {label}
+    </span>
   );
 };
 

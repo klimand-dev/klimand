@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { Assistant } from "@/components/assistant";
 import { SandboxBar } from "@/components/sandbox-bar";
 import { ProjectBar } from "@/components/project-bar";
-import { AgentProfilePanel } from "@/components/agent-profile-panel";
+import { SidebarFooter } from "@/components/sidebar-footer";
+import { SettingsView } from "@/components/settings-view";
 import { MobilePanelTrigger } from "@/components/mobile-panel-trigger";
 import { ThreadList } from "@/components/thread-list";
 import { ScheduledRunsView } from "@/components/scheduled-runs-view";
@@ -17,7 +18,10 @@ import type { ApprovedRef } from "@/lib/projects";
 const CURRENT_THREAD_KEY = "klimand:current-thread";
 const CURRENT_VIEW_KEY = "klimand:current-view";
 
-type View = { kind: "thread"; threadId: string } | { kind: "project"; path: string };
+type View =
+  | { kind: "thread"; threadId: string }
+  | { kind: "project"; path: string }
+  | { kind: "settings" };
 
 function loadStoredView(): View | null {
   if (typeof window === "undefined") return null;
@@ -25,7 +29,9 @@ function loadStoredView(): View | null {
     const raw = localStorage.getItem(CURRENT_VIEW_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as View;
-    if (parsed && (parsed.kind === "thread" || parsed.kind === "project")) return parsed;
+    if (parsed && (parsed.kind === "thread" || parsed.kind === "project" || parsed.kind === "settings")) {
+      return parsed;
+    }
   } catch {
     /* swallow */
   }
@@ -106,6 +112,9 @@ export default function Page(): React.ReactElement {
           setViewState(stored);
           return;
         }
+      } else if (stored.kind === "settings") {
+        setViewState(stored);
+        return;
       }
     }
     if (currentId) setViewState({ kind: "thread", threadId: currentId });
@@ -134,6 +143,10 @@ export default function Page(): React.ReactElement {
     },
     [setView]
   );
+
+  const handleOpenSettings = useCallback(() => {
+    setView({ kind: "settings" });
+  }, [setView]);
 
   const handleCreate = useCallback(async () => {
     const t = await create();
@@ -213,7 +226,7 @@ export default function Page(): React.ReactElement {
       ) : null}
       <div className="flex flex-1 overflow-hidden">
         <aside className="hidden lg:flex w-[clamp(320px,33%,440px)] flex-col border-r border-border">
-          <div className="border-b border-border overflow-y-auto">
+          <div className="flex-1 overflow-y-auto">
             <ThreadList
               threads={threads}
               approved={approved}
@@ -227,12 +240,15 @@ export default function Page(): React.ReactElement {
               onSelectProject={handleSelectProject}
             />
           </div>
-          <div className="flex-1 overflow-hidden">
-            <AgentProfilePanel className="h-full w-full" />
-          </div>
+          <SidebarFooter
+            active={view?.kind === "settings"}
+            onOpenSettings={handleOpenSettings}
+          />
         </aside>
         <div className="flex-1 overflow-hidden">
-          {view?.kind === "project" ? (
+          {view?.kind === "settings" ? (
+            <SettingsView />
+          ) : view?.kind === "project" ? (
             <ProjectView
               key={view.path}
               path={view.path}

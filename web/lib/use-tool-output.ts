@@ -20,6 +20,7 @@ export interface ToolOutputSnapshot {
   cwd?: string | null;
   provider?: "claude" | "codex" | null;
   pendingApproval?: PendingApprovalSnapshot | null;
+  startedAt?: number | null;
 }
 
 const ACTIVE_POLL_MS = 600;

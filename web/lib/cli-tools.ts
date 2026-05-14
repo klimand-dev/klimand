@@ -14,7 +14,11 @@ import { appendAudit, nowIso, sha256 } from "./audit";
 import { getCurrentSandbox, getSandboxForThread } from "./sandbox";
 import type { AgentPrefs } from "./prefs";
 
-const TIMEOUT_MS = 30 * 60 * 1000;
+const TIMEOUT_MS = (() => {
+  const raw = process.env.KLIMAND_CLI_TIMEOUT_MS;
+  const parsed = raw ? Number.parseInt(raw, 10) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 30 * 60 * 1000;
+})();
 
 export interface AgentRunContext {
   prefs: AgentPrefs;
@@ -114,7 +118,13 @@ async function runToolAndSummarize(spec: ToolRunSpec): Promise<AgentSummary> {
   let command = spec.buildCommand(workspace, effectivePrompt);
   let argv = spec.buildArgv(workspace, effectivePrompt);
   const id = callId(spec.details);
-  if (id) markStarted(id, { provider: spec.provider, command, cwd: workspace });
+  if (id)
+    markStarted(id, {
+      provider: spec.provider,
+      command,
+      cwd: workspace,
+      threadId: spec.threadId
+    });
   const started = Date.now();
 
   await appendAudit({
@@ -170,7 +180,12 @@ async function runToolAndSummarize(spec: ToolRunSpec): Promise<AgentSummary> {
       effectivePrompt = decision.editedPrompt;
       command = spec.buildCommand(workspace, effectivePrompt);
       argv = spec.buildArgv(workspace, effectivePrompt);
-      markStarted(id, { provider: spec.provider, command, cwd: workspace });
+      markStarted(id, {
+        provider: spec.provider,
+        command,
+        cwd: workspace,
+        threadId: spec.threadId
+      });
     }
   }
 

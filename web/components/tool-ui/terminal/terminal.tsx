@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Ansi from "ansi-to-react";
 import {
   Copy,
@@ -45,10 +45,18 @@ type TerminalOutputProps = Pick<
   onToggleCollapse: () => void;
 };
 
-function formatDuration(durationMs?: number): string | null {
+export function formatDuration(durationMs?: number | null): string | null {
   if (durationMs == null) return null;
-  if (durationMs < 1000) return `${Math.round(durationMs)}ms`;
-  return `${(durationMs / 1000).toFixed(1)}s`;
+  const totalSeconds = durationMs / 1000;
+  if (totalSeconds < 60) {
+    return durationMs < 1000 ? `${Math.round(durationMs)}ms` : `${totalSeconds.toFixed(1)}s`;
+  }
+  const totalSec = Math.floor(totalSeconds);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
 }
 
 function countOutputLines(output: string): number {
@@ -203,15 +211,34 @@ function TerminalRoot({
   expanded,
   defaultExpanded = false,
   onExpandedChange,
+  startedAt,
+  isRunning,
 }: TerminalRootProps) {
   const [uncontrolledExpanded, setUncontrolledExpanded] =
     useState(defaultExpanded);
   const { copiedId, copy } = useCopyToClipboard();
 
+  // Live elapsed-time tick. While the tool is running and we have a server
+  // start anchor, recompute Date.now()-startedAt every second. Once the run
+  // settles we fall back to the server-reported durationMs (no client/server
+  // clock-skew drift in the final display).
+  const [tickMs, setTickMs] = useState<number | null>(null);
+  useEffect(() => {
+    if (!isRunning || startedAt == null) {
+      setTickMs(null);
+      return;
+    }
+    const update = () => setTickMs(Date.now() - startedAt);
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [isRunning, startedAt]);
+  const liveDurationMs = isRunning && tickMs != null ? tickMs : durationMs;
+
   const isExpanded = expanded ?? uncontrolledExpanded;
   const hasOutput = Boolean(stdout || stderr);
   const fullOutput = [stdout, stderr].filter(Boolean).join("\n");
-  const formattedDuration = formatDuration(durationMs);
+  const formattedDuration = formatDuration(liveDurationMs);
   const lineCount = countOutputLines(fullOutput);
   const shouldCollapse =
     maxCollapsedLines !== undefined && lineCount > maxCollapsedLines;

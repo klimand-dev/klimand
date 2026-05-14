@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PlusIcon, TrashIcon, PencilIcon, CheckIcon, XIcon, FolderIcon, FolderOpenIcon, ChevronRightIcon, ChevronDownIcon, LinkIcon } from "lucide-react";
 import type { Thread } from "@/lib/threads";
 import { deriveProjects, type ApprovedRef, type ProjectGroup } from "@/lib/projects";
+import { useThreadStatuses, type ThreadStatus } from "@/lib/use-thread-statuses";
+import { ThreadRowStatus } from "@/components/thread-row-status";
 import { cn } from "@/lib/utils";
 
 const COLLAPSED_KEY = "klimand:thread-list:collapsed";
@@ -66,11 +68,19 @@ export function ThreadList({
   onSelectProject
 }: ThreadListProps): React.ReactElement {
   const grouping = deriveProjects(threads, approved);
-  const [collapsed, setCollapsed] = useState<Set<string>>(loadCollapsed);
+  // Start with the server's empty Set; rehydrate from localStorage post-mount.
+  // Reading localStorage during initial render causes a hydration mismatch
+  // (server has no localStorage, client may have collapsed keys persisted),
+  // which flips chevron icons mid-paint.
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    setCollapsed(loadCollapsed());
+  }, []);
   const [urlMode, setUrlMode] = useState(false);
   const [urlDraft, setUrlDraft] = useState("");
   const [urlBusy, setUrlBusy] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
+  const statuses = useThreadStatuses();
 
   const toggle = (key: string) => {
     setCollapsed((prev) => {
@@ -87,6 +97,7 @@ export function ThreadList({
       key={t.id}
       thread={t}
       active={t.id === currentId}
+      status={statuses[t.id]}
       onSelect={onSelect}
       onDelete={onDelete}
       onRename={onRename}
@@ -308,12 +319,14 @@ function Section({
 function ThreadRow({
   thread,
   active,
+  status,
   onSelect,
   onDelete,
   onRename
 }: {
   thread: Thread;
   active: boolean;
+  status: ThreadStatus | undefined;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
   onRename: (id: string, title: string) => void;
@@ -375,11 +388,12 @@ function ThreadRow({
             type="button"
             onClick={() => onSelect(thread.id)}
             onDoubleClick={() => setEditing(true)}
-            className="flex flex-1 flex-col items-start gap-0.5 truncate text-left"
+            className="flex min-w-0 flex-1 flex-col items-start gap-0.5 text-left"
           >
-            <span className="truncate text-xs font-medium">{thread.title}</span>
-            <span className="font-mono text-[10px] text-muted-foreground">
-              {relativeTime(thread.lastTouched)}
+            <span className="w-full truncate text-xs font-medium">{thread.title}</span>
+            <span className="flex w-full items-center gap-1.5 font-mono text-[10px] text-muted-foreground">
+              <ThreadRowStatus status={status} />
+              <span className="truncate">{relativeTime(thread.lastTouched)}</span>
             </span>
           </button>
           <button

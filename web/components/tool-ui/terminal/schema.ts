@@ -19,6 +19,10 @@ export const TerminalPropsSchema = z.object({
   truncated: z.boolean().optional(),
   maxCollapsedLines: z.number().min(1).optional(),
   className: z.string().optional(),
+  // Runtime-only: live elapsed-time anchor and ticking gate. Optional so
+  // serializable callers that don't supply these still type-check.
+  startedAt: z.number().nullable().optional(),
+  isRunning: z.boolean().optional(),
 });
 
 export type TerminalProps = z.infer<typeof TerminalPropsSchema>;
