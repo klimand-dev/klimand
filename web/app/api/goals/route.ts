@@ -9,7 +9,10 @@ const CreateGoalBodySchema = z.object({
   threadId: z.string().min(1),
   projectPath: z.string().nullable(),
   outcome: z.string().min(1),
-  stopCondition: z.string().min(1),
+  // Stop condition is auto-derived from the outcome when the caller (e.g. the
+  // suggest-banner) doesn't have a specific signal in mind. The decomposition
+  // skill is responsible for refining it during planning.
+  stopCondition: z.string().min(1).optional(),
   decomposedBy: z.string().default("manual"),
   subTasks: z
     .array(
@@ -42,11 +45,15 @@ export async function POST(req: Request): Promise<Response> {
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
   }
+  const stopCondition =
+    parsed.data.stopCondition && parsed.data.stopCondition.trim().length > 0
+      ? parsed.data.stopCondition
+      : `All planned sub-tasks pass for: ${parsed.data.outcome}`;
   const goal = await createGoal({
     threadId: parsed.data.threadId,
     projectPath: parsed.data.projectPath,
     outcome: parsed.data.outcome,
-    stopCondition: parsed.data.stopCondition,
+    stopCondition,
     decomposedBy: parsed.data.decomposedBy,
     subTasks: parsed.data.subTasks.map((st) => ({
       description: st.description,

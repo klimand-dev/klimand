@@ -7,6 +7,8 @@ import { AssistantChatTransport, useChatRuntime } from "@assistant-ui/react-ai-s
 import { Thread } from "@/components/thread";
 import { toolkit } from "@/components/toolkit";
 import { GoalSuggestBanner } from "@/components/goal-suggest-banner";
+import { GoalTracker } from "@/components/goal-tracker";
+import { useThreadGoal } from "@/lib/use-thread-goal";
 
 interface AssistantProps {
   threadId: string;
@@ -40,6 +42,7 @@ function saveMessages(threadId: string, messages: UIMessage[]): void {
 
 export function Assistant({ threadId }: AssistantProps): React.ReactElement {
   const initialMessages = useMemo(() => loadInitialMessages(threadId), [threadId]);
+  const { goal, refresh: refreshGoal } = useThreadGoal(threadId);
 
   const runtime = useChatRuntime({
     id: threadId,
@@ -56,8 +59,12 @@ export function Assistant({ threadId }: AssistantProps): React.ReactElement {
   return (
     <AssistantRuntimeProvider runtime={runtime} aui={aui}>
       <div className="flex h-full flex-col">
-        <div className="px-4 pt-3">
-          <GoalSuggestBanner threadId={threadId} />
+        <div className="flex flex-col gap-2 px-4 pt-3">
+          {goal ? (
+            <GoalTracker goalId={goal.id} />
+          ) : (
+            <GoalSuggestBanner threadId={threadId} onGoalStarted={refreshGoal} />
+          )}
         </div>
         <div className="flex-1 overflow-hidden">
           <Thread />

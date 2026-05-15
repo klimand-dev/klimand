@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuiState } from "@assistant-ui/react";
-import { TargetIcon, XIcon } from "lucide-react";
+import { TargetIcon, XIcon, LoaderIcon } from "lucide-react";
 import { detectGoalShape } from "@/lib/goal-shape-detector";
 
 interface AnyMessagePart {
@@ -15,13 +15,32 @@ interface ThreadMessageLike {
   parts?: AnyMessagePart[];
 }
 
+interface ThreadFetchResponse {
+  thread?: { projectPath?: string | null };
+}
+
+interface CreateGoalResponse {
+  goal?: { id: string };
+  error?: string;
+}
+
+interface GoalSuggestBannerProps {
+  threadId: string;
+  // Notified when a goal has been kicked off so the parent can hide the banner
+  // and surface the tracker.
+  onGoalStarted?: (goalId: string) => void;
+}
+
 /**
- * Banner that surfaces above the chat when the first user turn looks goal-shaped.
- * Goal mode is "coming later" — the banner is informational and dismissible.
+ * Banner that surfaces above the chat when the first user turn looks
+ * goal-shaped. Clicking "Run as goal" creates a Goal record with the message as
+ * the outcome and starts the autonomy-loop runner against it.
  */
-export function GoalSuggestBanner({ threadId }: { threadId: string }): React.ReactElement | null {
+export function GoalSuggestBanner({ threadId, onGoalStarted }: GoalSuggestBannerProps): React.ReactElement | null {
   const messages = useAuiState((s) => (s.thread.messages as unknown) as ThreadMessageLike[]);
   const [dismissed, setDismissed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -48,6 +67,54 @@ export function GoalSuggestBanner({ threadId }: { threadId: string }): React.Rea
     }
   };
 
+  const runAsGoal = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      // Best-effort: thread metadata gives us the project path when one is bound.
+      let projectPath: string | null = null;
+      try {
+        const tr = await fetch(`/api/threads/${threadId}`, { cache: "no-store" });
+        if (tr.ok) {
+          const tj = (await tr.json()) as ThreadFetchResponse;
+          projectPath = tj.thread?.projectPath ?? null;
+        }
+      } catch {
+        /* no project context — runner uses sandbox */
+      }
+      const createRes = await fetch("/api/goals", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId,
+          projectPath,
+          outcome: text,
+          decomposedBy: "goal-decomposition"
+        })
+      });
+      const created = (await createRes.json()) as CreateGoalResponse;
+      if (!createRes.ok || !created.goal) {
+        setError(created.error ?? `create failed (${createRes.status})`);
+        setSubmitting(false);
+        return;
+      }
+      const runRes = await fetch(`/api/goals/${created.goal.id}/run`, { method: "POST" });
+      if (!runRes.ok) {
+        const rj = (await runRes.json().catch(() => ({}))) as { error?: string };
+        setError(rj.error ?? `run failed (${runRes.status})`);
+        setSubmitting(false);
+        return;
+      }
+      dismiss();
+      onGoalStarted?.(created.goal.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-(--thread-max-width) items-start gap-2 rounded border border-accent/40 bg-accent/10 px-3 py-2">
       <TargetIcon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-accent" />
@@ -56,10 +123,21 @@ export function GoalSuggestBanner({ threadId }: { threadId: string }): React.Rea
           This looks like a multi-step goal.
         </div>
         <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-          Goal mode runs the work durably across both CLIs and wakes you when it's done.{" "}
-          <span className="italic">Coming later — for now, Klimand handles each turn synchronously.</span>
+          Goal mode plans the work, runs both CLIs durably across sub-tasks, and reports progress in the tracker.
         </div>
+        {error ? (
+          <div className="mt-1 font-mono text-[11px] text-red-400">{error}</div>
+        ) : null}
       </div>
+      <button
+        type="button"
+        onClick={runAsGoal}
+        disabled={submitting}
+        className="inline-flex items-center gap-1 rounded border border-accent/60 bg-accent/15 px-2 py-1 font-mono text-[11px] font-semibold text-accent hover:bg-accent/25 disabled:opacity-60"
+      >
+        {submitting ? <LoaderIcon className="h-3 w-3 animate-spin" /> : <TargetIcon className="h-3 w-3" />}
+        Run as goal
+      </button>
       <button
         type="button"
         title="Dismiss"

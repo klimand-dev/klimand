@@ -89,7 +89,7 @@ function shortPromptLabel(prompt: string): string {
   return trimmed.length <= 60 ? trimmed : `${trimmed.slice(0, 57)}…`;
 }
 
-function callId(details: ToolCallDetailsLike | undefined): string | null {
+function callIdFromDetails(details: ToolCallDetailsLike | undefined): string | null {
   return details?.toolCall?.callId ?? null;
 }
 
@@ -100,7 +100,7 @@ interface ToolRunSpec {
   threadId?: string;
   projectPath?: string;
   approval: "auto" | "ask";
-  details: ToolCallDetailsLike | undefined;
+  callId: string | null;
   buildCommand: (workspace: string, prompt: string) => string;
   buildArgv: (workspace: string, prompt: string) => { cmd: string; args: string[] };
 }
@@ -117,7 +117,7 @@ async function runToolAndSummarize(spec: ToolRunSpec): Promise<AgentSummary> {
   let effectivePrompt = spec.prompt;
   let command = spec.buildCommand(workspace, effectivePrompt);
   let argv = spec.buildArgv(workspace, effectivePrompt);
-  const id = callId(spec.details);
+  const id = spec.callId;
   if (id)
     markStarted(id, {
       provider: spec.provider,
@@ -286,7 +286,7 @@ export const runClaudeCode = tool({
       threadId,
       projectPath,
       approval,
-      details: details as ToolCallDetailsLike,
+      callId: callIdFromDetails(details as ToolCallDetailsLike),
       buildCommand: (_ws, p) => `claude ${claudeArgs(prefs).join(" ")} '${shortPromptLabel(p)}'`,
       buildArgv: () => ({ cmd: "claude", args: claudeArgs(prefs) })
     });
@@ -317,9 +317,49 @@ export const runCodex = tool({
       threadId,
       projectPath,
       approval,
-      details: details as ToolCallDetailsLike,
+      callId: callIdFromDetails(details as ToolCallDetailsLike),
       buildCommand: (ws, p) => `codex ${codexArgs(ws, prefs).join(" ")} <<< '${shortPromptLabel(p)}'`,
       buildArgv: (ws) => ({ cmd: "codex", args: codexArgs(ws, prefs) })
     });
   }
 });
+
+// Direct (non-tool) entry point so the goal runner can dispatch a CLI without
+// going through an OpenAI Agents tool wrapper. Reuses the same audit/broker/
+// sandbox plumbing as the chat-side tools.
+export interface RunProviderInput {
+  callId: string | null;
+  provider: "claude" | "codex";
+  prompt: string;
+  threadId?: string;
+  projectPath?: string;
+  approval: "auto" | "ask";
+  prefs?: AgentPrefs;
+}
+
+export async function runProvider(input: RunProviderInput): Promise<AgentSummary> {
+  if (input.provider === "claude") {
+    return runToolAndSummarize({
+      provider: "claude",
+      prompt: input.prompt,
+      requestedWorkspace: "AUTO",
+      threadId: input.threadId,
+      projectPath: input.projectPath,
+      approval: input.approval,
+      callId: input.callId,
+      buildCommand: (_ws, p) => `claude ${claudeArgs(input.prefs).join(" ")} '${shortPromptLabel(p)}'`,
+      buildArgv: () => ({ cmd: "claude", args: claudeArgs(input.prefs) })
+    });
+  }
+  return runToolAndSummarize({
+    provider: "codex",
+    prompt: input.prompt,
+    requestedWorkspace: "AUTO",
+    threadId: input.threadId,
+    projectPath: input.projectPath,
+    approval: input.approval,
+    callId: input.callId,
+    buildCommand: (ws, p) => `codex ${codexArgs(ws, input.prefs).join(" ")} <<< '${shortPromptLabel(p)}'`,
+    buildArgv: (ws) => ({ cmd: "codex", args: codexArgs(ws, input.prefs) })
+  });
+}
