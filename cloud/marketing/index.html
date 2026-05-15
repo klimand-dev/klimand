@@ -146,8 +146,8 @@
           <span class="icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M6 16.5V11a4 4 0 0 1 4-4h5"/></svg>
           </span>
-          <h3>Goal mode <span class="pill-inline">coming soon</span></h3>
-          <p>State an outcome; Klimand decomposes it into sub-tasks, drives them across Claude and Codex, waits on long sessions, and wakes you when it's done. Chat mode ships today; goal mode is in active build.</p>
+          <h3>Goal mode</h3>
+          <p>State an outcome; Klimand decomposes it into sub-tasks, drives them across Claude and Codex, evaluates each one by verification check, and shows live progress in the tracker.</p>
         </article>
         <article class="card">
           <span class="icon" aria-hidden="true">
@@ -156,6 +156,112 @@
           <h3>BYOK · Apache-2.0</h3>
           <p>Bring your own OpenAI / Anthropic key for the orchestrator. Claude Code and Codex use their own auth. Source available on GitHub.</p>
         </article>
+      </div>
+    </section>
+
+    <section class="goal container fade-in">
+      <span class="pill">New</span>
+      <h2>Goal mode</h2>
+      <p class="section-lede">
+        State an outcome. Klimand turns it into a plan, runs each step against your real project, and decides what to do next.
+      </p>
+
+      <div class="goal-layout">
+        <div class="goal-steps">
+          <article class="goal-step">
+            <span class="goal-step-num">1</span>
+            <h3>Decompose</h3>
+            <p>The orchestrator turns your outcome into an ordered list of verifiable sub-tasks, with a single CLI per task and explicit dependencies.</p>
+          </article>
+          <article class="goal-step">
+            <span class="goal-step-num">2</span>
+            <h3>Dispatch</h3>
+            <p>Each sub-task runs against your real project — same auth, same <code>CLAUDE.md</code> and <code>AGENTS.md</code> rules as a chat turn.</p>
+          </article>
+          <article class="goal-step">
+            <span class="goal-step-num">3</span>
+            <h3>Evaluate</h3>
+            <p>A verification check decides pass / partial / fail. Pass moves on; partial retries with feedback; fail escalates and pauses the run.</p>
+          </article>
+        </div>
+
+        <aside class="goal-mock" aria-label="Goal tracker preview">
+          <div class="goal-mock-head">
+            <div class="goal-mock-head-meta">
+              <span class="goal-mock-label">Goal</span>
+              <span class="goal-mock-status">running</span>
+            </div>
+            <div class="goal-mock-head-actions" aria-hidden="true">
+              <span class="goal-mock-btn">‖</span>
+              <span class="goal-mock-btn">×</span>
+            </div>
+          </div>
+          <div class="goal-mock-outcome">Refactor auth middleware to use the session API</div>
+          <div class="goal-mock-stop">Stop when: vitest passes on the new API</div>
+
+          <div class="goal-mock-progress">
+            <div class="goal-mock-progress-meta">
+              <span>2/5 sub-tasks · 40%</span>
+              <span>updated 14:22:08</span>
+            </div>
+            <div class="goal-mock-progress-bar">
+              <div class="goal-mock-progress-fill"></div>
+            </div>
+          </div>
+
+          <ul class="goal-mock-list">
+            <li class="goal-mock-sub goal-mock-sub-done">
+              <span class="goal-mock-sub-icon" aria-hidden="true">✓</span>
+              <div class="goal-mock-sub-body">
+                <div class="goal-mock-sub-line">
+                  <span class="goal-mock-sub-title">1. Audit getSession callsites</span>
+                  <span class="goal-mock-sub-provider">[claude]</span>
+                </div>
+                <div class="goal-mock-sub-verify">verify: list of files printed</div>
+              </div>
+            </li>
+            <li class="goal-mock-sub goal-mock-sub-done">
+              <span class="goal-mock-sub-icon" aria-hidden="true">✓</span>
+              <div class="goal-mock-sub-body">
+                <div class="goal-mock-sub-line">
+                  <span class="goal-mock-sub-title">2. Refactor middleware</span>
+                  <span class="goal-mock-sub-provider">[codex]</span>
+                </div>
+                <div class="goal-mock-sub-verify">verify: src/middleware/auth.ts compiles</div>
+              </div>
+            </li>
+            <li class="goal-mock-sub goal-mock-sub-running">
+              <span class="goal-mock-sub-icon goal-mock-spin" aria-hidden="true"></span>
+              <div class="goal-mock-sub-body">
+                <div class="goal-mock-sub-line">
+                  <span class="goal-mock-sub-title">3. Update three route callsites</span>
+                  <span class="goal-mock-sub-provider">[codex]</span>
+                </div>
+                <div class="goal-mock-sub-verify">verify: tsc --noEmit clean</div>
+              </div>
+            </li>
+            <li class="goal-mock-sub">
+              <span class="goal-mock-sub-icon" aria-hidden="true">○</span>
+              <div class="goal-mock-sub-body">
+                <div class="goal-mock-sub-line">
+                  <span class="goal-mock-sub-title">4. Run vitest, fix failures</span>
+                  <span class="goal-mock-sub-provider">[codex]</span>
+                </div>
+                <div class="goal-mock-sub-verify">verify: vitest exits 0</div>
+              </div>
+            </li>
+            <li class="goal-mock-sub">
+              <span class="goal-mock-sub-icon" aria-hidden="true">○</span>
+              <div class="goal-mock-sub-body">
+                <div class="goal-mock-sub-line">
+                  <span class="goal-mock-sub-title">5. Open commit for review</span>
+                  <span class="goal-mock-sub-provider">[claude]</span>
+                </div>
+                <div class="goal-mock-sub-verify">verify: git log shows new commit</div>
+              </div>
+            </li>
+          </ul>
+        </aside>
       </div>
     </section>
 
