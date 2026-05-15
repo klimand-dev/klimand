@@ -40,6 +40,8 @@ body {
     radial-gradient(1100px 600px at 80% -10%, rgba(139, 122, 246, 0.10), transparent 60%),
     radial-gradient(900px 500px at 0% 5%, rgba(106, 216, 196, 0.08), transparent 60%);
   background-attachment: fixed;
+  /* Belt-and-braces: never let a rogue element trigger horizontal scroll. */
+  overflow-x: hidden;
 }
 
 .container { max-width: 1080px; margin: 0 auto; padding-left: 1.25rem; padding-right: 1.25rem; }
@@ -180,11 +182,13 @@ section .lede code,
   font-weight: 500;
   transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
 }
-.btn:hover {
-  border-color: var(--accent);
-  background: var(--muted);
-  color: var(--fg);
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .btn:hover {
+    border-color: var(--accent);
+    background: var(--muted);
+    color: var(--fg);
+    transform: translateY(-1px);
+  }
 }
 .btn.primary {
   background: var(--accent);
@@ -192,16 +196,20 @@ section .lede code,
   border-color: var(--accent);
   font-weight: 600;
 }
-.btn.primary:hover {
-  background: #7fe2cf;
-  border-color: #7fe2cf;
-  color: var(--bg);
+@media (hover: hover) {
+  .btn.primary:hover {
+    background: #7fe2cf;
+    border-color: #7fe2cf;
+    color: var(--bg);
+  }
 }
 .btn-arrow {
   display: inline-block;
   transition: transform 0.18s ease;
 }
-.btn:hover .btn-arrow { transform: translateX(3px); }
+@media (hover: hover) {
+  .btn:hover .btn-arrow { transform: translateX(3px); }
+}
 
 /* ---------- Chat mock (mirrors the actual Klimand chat UI pixel-for-pixel) ---------- */
 .chat {
@@ -447,10 +455,14 @@ section {
   padding: 1.4rem;
   transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
-.card:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-strong);
-  background: var(--muted);
+/* Only mouse/trackpad gets the hover lift; touch devices would otherwise leave
+ * the hover state stuck on after a tap. */
+@media (hover: hover) {
+  .card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-strong);
+    background: var(--muted);
+  }
 }
 .card .icon {
   display: inline-flex;
@@ -635,4 +647,25 @@ footer {
   .footer-row { justify-content: flex-start; }
   .term-body { font-size: 0.76rem; }
   .term-cmd { font-size: 0.7rem; }
+  /* Denser cards + table cells so two columns of dense copy don't choke. */
+  .card { padding: 1.15rem; }
+  th, td { padding: 0.75rem 0.85rem; }
+  h2 { font-size: 1.5rem; }
+}
+/* Very-narrow phones (iPhone SE, small Androids). */
+@media (max-width: 480px) {
+  .container { padding-left: 1rem; padding-right: 1rem; }
+  .hero { padding: 3rem 0 2.25rem; }
+  section { padding: 2.75rem 0; }
+  .card { padding: 1rem; }
+  .card-grid { gap: 0.75rem; }
+  .term-body { padding: 0.75rem; }
+  .term-head { padding: 0.5rem 0.75rem; }
+  /* Drop the workspace path + divider on tiny screens to keep the brand row
+   * on one line without ellipsis collisions with the status pill. */
+  .brand-workspace,
+  .brand-divider { display: none; }
+  /* Keep the npx command and primary button on their own lines for tap targets. */
+  .cta-row .cmd,
+  .cta-row .btn { width: 100%; justify-content: center; }
 }
