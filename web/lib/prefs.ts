@@ -1,7 +1,8 @@
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { z } from "zod";
+import { atomicWrite } from "./atomic-write";
 
 export const AgentPrefsSchema = z.object({
   routingHints: z.string().default(""),
@@ -102,10 +103,6 @@ export async function setPrefs(partial: Partial<AgentPrefs>): Promise<AgentPrefs
     license: { ...current.license, ...(partial.license ?? {}) }
   };
   const validated = AgentPrefsSchema.parse(merged);
-  await mkdir(prefsDir(), { recursive: true });
-  const finalPath = prefsPath();
-  const tmpPath = `${finalPath}.${process.pid}.${Date.now()}.tmp`;
-  await writeFile(tmpPath, JSON.stringify(validated, null, 2), "utf8");
-  await rename(tmpPath, finalPath);
+  await atomicWrite(prefsPath(), JSON.stringify(validated, null, 2));
   return validated;
 }

@@ -1,7 +1,8 @@
-import { mkdir, readFile, writeFile, readdir, unlink, rename } from "node:fs/promises";
+import { mkdir, readFile, readdir, unlink } from "node:fs/promises";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
+import { atomicWrite } from "./atomic-write";
 
 export const GoalStatusSchema = z.enum([
   "planning",
@@ -76,13 +77,6 @@ function goalFile(id: string): string {
 
 function newId(): string {
   return randomBytes(8).toString("hex");
-}
-
-async function atomicWrite(file: string, content: string): Promise<void> {
-  await mkdir(path.dirname(file), { recursive: true });
-  const tmp = `${file}.tmp-${randomBytes(4).toString("hex")}`;
-  await writeFile(tmp, content, "utf8");
-  await rename(tmp, file);
 }
 
 export interface CreateGoalInput {

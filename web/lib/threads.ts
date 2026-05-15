@@ -1,10 +1,11 @@
-import { mkdir, readFile, writeFile, readdir, unlink, rename } from "node:fs/promises";
+import { mkdir, readFile, readdir, unlink } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { touchProject } from "./project-registry";
 import { schedulePush } from "./sync-github";
+import { atomicWrite as atomicWriteFile } from "./atomic-write";
 
 export const ThreadKindSchema = z.enum(["chat", "scheduled"]);
 export type ThreadKind = z.infer<typeof ThreadKindSchema>;
@@ -44,10 +45,7 @@ function newSandboxPath(): string {
 }
 
 async function atomicWrite(file: string, content: string): Promise<void> {
-  await mkdir(path.dirname(file), { recursive: true });
-  const tmp = `${file}.tmp-${randomBytes(4).toString("hex")}`;
-  await writeFile(tmp, content, "utf8");
-  await rename(tmp, file);
+  await atomicWriteFile(file, content);
   schedulePush();
 }
 
