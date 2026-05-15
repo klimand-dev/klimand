@@ -214,12 +214,17 @@ section .lede code,
 /* ---------- Chat mock (mirrors the actual Klimand chat UI pixel-for-pixel) ---------- */
 .chat {
   width: 100%;
+  /* min-width: 0 lets grid/flex parents shrink us below intrinsic content width.
+   * Without this the pre-formatted terminal lines push the card past the
+   * viewport on mobile, then body overflow-x:hidden clips them off-screen. */
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
 .chat-thread {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   gap: 1.5rem;            /* matches gap-y-8 (close enough for hero density) */
   font-family: var(--font-sans);
 }
@@ -253,6 +258,11 @@ section .lede code,
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+  /* Cap the card at its container's width so the intrinsic pre-formatted
+   * terminal content can't push the card off the side on mobile.
+   * overflow: hidden then clips horizontal overflow inside the card. */
+  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.02),
