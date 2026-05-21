@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 # KV: license metadata + push subscriptions + per-license LLM token counters
 [[kv_namespaces]]
 binding = "KLIMAND_KV"
-id = "REPLACE_WITH_KV_ID_AFTER_wrangler_kv_namespace_create"
+id = "d06c8a5730bd47b4a028d3f320a7f64a"
 
 # Cron: scheduler tick every minute
 [triggers]
@@ -15,8 +15,11 @@ crons = ["* * * * *"]
 # Required secrets (set via `wrangler secret put`):
 #   STRIPE_SECRET_KEY            - sk_live_... or sk_test_...
 #   STRIPE_WEBHOOK_SECRET        - whsec_...
-#   STRIPE_PRO_PRICE_ID          - price_...
+#   STRIPE_PRO_PRICE_ID          - price_... (monthly)
+#   STRIPE_PRO_PRICE_ID_YEARLY   - price_... (annual; optional)
 #   OPENAI_API_KEY               - our key, used by hosted LLM gateway
 #   VAPID_PUBLIC_KEY             - generated via web-push generate-vapid-keys
 #   VAPID_PRIVATE_KEY            -
 #   VAPID_CONTACT                - mailto:you@example.com
+#   RESEND_API_KEY               - re_... (for license-key delivery emails)
+#   LICENSE_FROM_EMAIL           - e.g. "Klimand <support@klimand.com>"

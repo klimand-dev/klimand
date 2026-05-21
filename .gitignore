@@ -8,3 +8,8 @@ runs/
 .next/
 *.tsbuildinfo
 .env*
+
+# Claude worktrees (linked .git pointers) - added 2026-05-21 cleanup
+.claude/worktrees/
+.claude/*.lock
+

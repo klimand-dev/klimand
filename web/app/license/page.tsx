@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { CheckIcon, ExternalLinkIcon, RefreshCwIcon } from "lucide-react";
 import { useLicense } from "@/lib/use-license";
+import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 // Set at build time once you've stood up a Stripe Payment Link / Checkout
@@ -21,6 +22,16 @@ export default function LicensePage(): React.ReactElement {
     if (key) setDraft(key);
   }, [key]);
 
+  // Detect Stripe Checkout return (Payment Link redirect appends ?paid=1)
+  // and fire checkout_complete once per landing.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("paid") === "1") {
+      track("checkout_complete", { surface: "license_return" });
+    }
+  }, []);
+
   const handleSave = useCallback(async () => {
     setBusy(true);
     setError(null);
@@ -28,6 +39,8 @@ export default function LicensePage(): React.ReactElement {
       const next = await setKey(draft.trim() || null);
       if (next.status === "unknown" && draft.trim()) {
         setError("License key not recognized. Double-check the value from your purchase email.");
+      } else if (next.status === "active" || next.status === "trial") {
+        track("license_activated", { status: next.status });
       }
     } finally {
       setBusy(false);
@@ -57,10 +70,9 @@ export default function LicensePage(): React.ReactElement {
         <header className="mt-4 mb-6">
           <h1 className="text-2xl font-semibold text-foreground">License</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Klimand is free and open source. An optional Pro tier is planned (hosted scheduling, GitHub-backed sync,
-            push notifications, hosted LLM gateway) — see <code className="font-mono text-[11px]">cloud/</code> in the repo
-            for the Worker + Stripe setup. <strong>No hosted backend is deployed yet</strong>; this page exists so the
-            entitlement flow is testable locally.
+            Klimand is free and open source. Pro adds hosted scheduling, GitHub-backed sync, Web Push notifications, and a hosted
+            LLM gateway. Paste your license key below to activate — or click <strong>Subscribe to Pro</strong> if you don't have
+            one yet.
           </p>
         </header>
 
@@ -129,6 +141,7 @@ export default function LicensePage(): React.ReactElement {
                 href={CHECKOUT_URL}
                 target="_blank"
                 rel="noreferrer"
+                onClick={() => track("pricing_click", { plan: "monthly", surface: "license_page" })}
                 className="flex items-center gap-1 rounded border border-border bg-card px-3 py-1.5 text-sm text-foreground hover:bg-muted"
               >
                 <ExternalLinkIcon className="h-3 w-3" />

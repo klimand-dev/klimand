@@ -1,10 +1,10 @@
 // License key issuance + verification, backed by Stripe-as-source-of-truth.
 //
 // Issuance: Stripe webhook on `customer.subscription.created` (or `.updated`)
-// fires here. We generate a UUID license key, store mapping in KV, and email
-// the customer the key. (Email sending is out of scope for v1 — we just
-// return the key in the webhook response for now, which Stripe lets you
-// surface via Customer Portal metadata; in production wire up Resend.)
+// fires here. We generate a license key, store mapping in KV, and email the
+// customer the key via Resend (RESEND_API_KEY + LICENSE_FROM_EMAIL secrets;
+// if unset, the issuance still succeeds and the key is recoverable via the
+// Customer Portal flow — see sendLicenseEmail soft-fail behavior).
 //
 // Verification: the local app calls /license/verify?key=... once per 24h.
 // Worker re-checks Stripe subscription status and refreshes KV. Local app
@@ -12,6 +12,7 @@
 
 import Stripe from "stripe";
 import type { Env } from "./index";
+import { sendLicenseEmail } from "./email";
 
 interface LicenseRecord {
   stripeSubId: string;
@@ -55,17 +56,43 @@ export async function handleLicenseIssue(req: Request, env: Env): Promise<Respon
     const status = sub.status as LicenseRecord["status"];
     // Find or mint a license for this subscription.
     let key = await env.KLIMAND_KV.get(subIndex(sub.id));
+    const isNewLicense = !key;
     if (!key) {
       key = newLicenseKey();
       await env.KLIMAND_KV.put(subIndex(sub.id), key);
     }
+    const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
     const rec: LicenseRecord = {
       stripeSubId: sub.id,
-      customerId: typeof sub.customer === "string" ? sub.customer : sub.customer.id,
+      customerId,
       status,
       currentPeriodEnd: (sub.current_period_end ?? 0) * 1000
     };
     await env.KLIMAND_KV.put(licenseKey(key), JSON.stringify(rec));
+
+    // On first issuance, email the key to the customer. Soft-fail.
+    if (isNewLicense && event.type === "customer.subscription.created") {
+      try {
+        const s = stripe(env);
+        const customer = await s.customers.retrieve(customerId);
+        const to = !("deleted" in customer) && customer.email ? customer.email : null;
+        if (to) {
+          const interval = sub.items.data[0]?.price?.recurring?.interval;
+          const plan: "monthly" | "yearly" = interval === "year" ? "yearly" : "monthly";
+          const portal = await s.billingPortal.sessions.create({
+            customer: customerId,
+            return_url: "https://klimand.com/license",
+            ...(env.STRIPE_PORTAL_CONFIG_ID ? { configuration: env.STRIPE_PORTAL_CONFIG_ID } : {})
+          }).catch(() => null);
+          await sendLicenseEmail(env, { to, licenseKey: key, plan, portalUrl: portal?.url });
+        } else {
+          console.warn(`[license/issue] no customer email for sub ${sub.id}; skipping send`);
+        }
+      } catch (e) {
+        console.error(`[license/issue] email path failed: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+
     return Response.json({ ok: true, licenseKey: key, status });
   }
 
@@ -118,7 +145,8 @@ export async function handleCustomerPortal(req: Request, env: Env): Promise<Resp
   const s = stripe(env);
   const session = await s.billingPortal.sessions.create({
     customer: rec.customerId,
-    return_url: returnUrl ?? "http://localhost:3000/license"
+    return_url: returnUrl ?? "http://localhost:3000/license",
+    ...(env.STRIPE_PORTAL_CONFIG_ID ? { configuration: env.STRIPE_PORTAL_CONFIG_ID } : {})
   });
   return Response.json({ url: session.url });
 }

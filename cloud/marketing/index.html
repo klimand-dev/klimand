@@ -20,6 +20,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="./styles.css" />
+
+  <!-- PostHog analytics (Phase 4c) -->
+  <script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init me ws ge fs capture De Ai $s register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty Db Eb createPersonProfile Ib opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing Fb debug I Fs getPageViewId captureTraceFeedback captureTraceMetric".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('phc_nDrXNnhGbKMxiAbgqtcF37fvo3vPMonUrkmakKezSMZP',{api_host:'https://us.i.posthog.com', defaults:'2025-05-24'});
+    posthog.capture('landing_view', {source: 'klimand.com'});
+  </script>
 </head>
 <body>
   <header class="hero">
@@ -265,12 +272,11 @@
       </div>
     </section>
 
-    <section class="pro container fade-in">
-      <span class="pill pill-muted">Coming later</span>
+    <section class="pro container fade-in" id="pricing">
+      <span class="pill">Pro · $14/mo</span>
       <h2>Pro</h2>
       <p class="section-lede">
-        Klimand is free and open source today. A paid Pro tier is planned for solo devs who want the convenience features off their plate.
-        Watch the repo for launch updates.
+        Klimand stays free and open source. Pro adds the convenience features solo devs want off their plate — for the price of a coffee subscription.
       </p>
       <div class="card-grid">
         <article class="card">
@@ -302,9 +308,47 @@
           <p>No API key to paste. Capped monthly budget for the orchestrator's routing calls.</p>
         </article>
       </div>
-      <p class="cta-row cta-row-center">
-        <a class="btn" href="https://github.com/klimand-dev/klimand">Watch the repo <span class="btn-arrow" aria-hidden="true">→</span></a>
+      <div class="pricing-row">
+        <a class="btn primary pricing-btn" href="https://buy.stripe.com/8x24gygOi8TyaV47xy9fW06"
+           onclick="window.posthog && posthog.capture('pricing_click',{plan:'monthly'})">
+          <span class="pricing-amount">$14</span>
+          <span class="pricing-period">/month</span>
+          <span class="pricing-sub">Subscribe monthly</span>
+        </a>
+        <a class="btn pricing-btn pricing-btn-yearly" href="https://buy.stripe.com/8x2dR82Xs3zeaV4cRS9fW07"
+           onclick="window.posthog && posthog.capture('pricing_click',{plan:'yearly'})">
+          <span class="pricing-amount">$144</span>
+          <span class="pricing-period">/year</span>
+          <span class="pricing-sub">Subscribe yearly · save $24</span>
+        </a>
+      </div>
+      <p class="pricing-fine-print">
+        Cancel any time from the Stripe portal link in your license email. BYOK still works on the free tier — Pro is for the hosted conveniences.
       </p>
+    </section>
+
+    <section class="faq container fade-in" id="faq">
+      <h2>Questions</h2>
+      <details class="faq-item">
+        <summary>Why do I need an OpenAI key?</summary>
+        <p>Klimand routes locally. Your keys, your usage, your control — Klimand never proxies your traffic on the free tier. The router model (gpt-5.4-mini) is the only thing that calls OpenAI; Claude Code and Codex use their own auth.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What's the difference between free and Pro?</summary>
+        <p>Free is the full local app — multi-CLI routing, threads, scheduling on your machine, GitHub/Linear ingest. Pro adds the hosted conveniences: schedules that run on Cloudflare while your laptop's closed, Web Push notifications when runs finish, GitHub-backed sync across devices, and a hosted LLM gateway so you can skip pasting an OpenAI key.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Can I cancel?</summary>
+        <p>Yes. Every license email includes a Stripe Customer Portal link — click it to cancel, switch plans, or update your card. Cancellations take effect at the end of the current period.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Do you store my prompts?</summary>
+        <p>No. The only data we keep is routing metadata: which CLI handled which step, duration, and the per-license token counter for the hosted LLM gateway. Prompt content stays on your machine; the orchestrator model gets it but doesn't persist it.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Is the source code open?</summary>
+        <p>Yes. The local app is Apache-2.0 on <a href="https://github.com/klimand-dev/klimand">GitHub</a>. The hosted Pro infrastructure (Worker, license issuance, Stripe glue) lives in a separate repo and is not open source — that's the part Klimand sells.</p>
+      </details>
     </section>
 
     <section class="compare container fade-in">

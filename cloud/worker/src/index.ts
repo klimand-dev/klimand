@@ -26,10 +26,14 @@ export interface Env {
   STRIPE_SECRET_KEY: string;
   STRIPE_WEBHOOK_SECRET: string;
   STRIPE_PRO_PRICE_ID: string;
+  STRIPE_PRO_PRICE_ID_YEARLY?: string;
   OPENAI_API_KEY: string;
   VAPID_PUBLIC_KEY: string;
   VAPID_PRIVATE_KEY: string;
   VAPID_CONTACT: string;
+  RESEND_API_KEY?: string;
+  LICENSE_FROM_EMAIL?: string;
+  STRIPE_PORTAL_CONFIG_ID?: string;
 }
 
 function cors(res: Response): Response {
